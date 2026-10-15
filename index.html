@@ -118,6 +118,16 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
 .step:hover { border-color: var(--accent); color: var(--accent); }
 .step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* Adjust mode: time rows get a full-width row of ± minute buttons */
+.item.adjust { cursor: default; }
+.item.adjust:active { transform: none; }
+.item.adjust:hover { border-color: var(--line); }
+.item.adjust.running, .item.adjust.running:hover { border-color: var(--accent); }
+.item.adjust .steps { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.item.adjust .step { padding: 8px 0; }
+.item.adjust .step.minus { color: var(--muted); }
+.item.adjust .step.minus:hover { color: var(--accent); }
+
 /* Toolbar */
 .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .btn {
@@ -212,6 +222,8 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
   }
   let state = load();
   let editing = false;
+  let adjusting = false;
+  const HINT = "Touchez une activité pour lancer ou mettre en pause son minuteur. La progression se remet à zéro automatiquement chaque nouveau jour.";
   let confirmReset = false;
 
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -280,9 +292,19 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     if (before < it.target && it.acc >= it.target) chime();
     save(); render();
   }
+  // Ajoute ou retire des minutes au temps déjà fait, sans arrêter le minuteur.
+  function adjust(id, minutes) {
+    const it = state.items.find(x => x.id === id);
+    if (!it) return;
+    const running = it.startedAt ? Date.now() - it.startedAt : 0;
+    it.acc = Math.max(-running, it.acc + minutes * 60000);
+    it.notified = progress(it) >= 1;
+    save(); tick();
+  }
 
   function render() {
     listEl.innerHTML = "";
+    listEl.classList.toggle("adjusting", adjusting);
     if (editing) return renderEdit();
     state.items.forEach(it => {
       const p = progress(it), done = p >= 1;
@@ -301,6 +323,25 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
           '</div>';
         row.querySelector("b").textContent = it.name;
         row.querySelectorAll(".step").forEach(b => b.addEventListener("click", () => bump(it.id, +b.dataset.n)));
+        listEl.appendChild(row);
+        return;
+      }
+      if (adjusting) {
+        const row = document.createElement("div");
+        row.className = "item adjust" + (it.startedAt ? " running" : "") + (done ? " done" : "");
+        row.dataset.id = it.id;
+        row.innerHTML =
+          '<div class="bar"></div>' +
+          '<div class="icon"></div>' +
+          '<div class="name"><b></b><small></small></div>' +
+          '<div class="time"><span class="el"></span><span class="tg">/ ' + fmtShort(it.target) + '</span></div>' +
+          '<div class="steps">' +
+            [-15, -5, -1, 1, 5, 15].map(m =>
+              '<button class="step' + (m < 0 ? " minus" : "") + '" data-m="' + m + '" aria-label="' + (m < 0 ? "Retirer " : "Ajouter ") + Math.abs(m) + ' minutes">' +
+              (m < 0 ? "−" : "+") + Math.abs(m) + '</button>').join("") +
+          '</div>';
+        row.querySelector("b").textContent = it.name;
+        row.querySelectorAll(".step").forEach(b => b.addEventListener("click", () => adjust(it.id, +b.dataset.m)));
         listEl.appendChild(row);
         return;
       }
@@ -337,7 +378,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
       row.querySelector(".icon").innerHTML = running ? ICON_PAUSE : (done ? ICON_DONE : ICON_PLAY);
       const over = el - it.target * 1000;
       row.querySelector(".el").textContent = done && over >= 1000 ? fmtClock(it.target * 1000) + " +" + fmtClock(over) : fmtClock(el);
-      row.querySelector("small").textContent = running ? (done ? "En cours · objectif atteint" : "En cours · reste " + fmtClock(it.target * 1000 - el + 999))
+      row.querySelector("small").textContent = adjusting ? (el > 0 ? Math.floor(p * 100) + " % de l'objectif" + (running ? " · en cours" : "") : "Pas encore commencé") : running ?(done ? "En cours · objectif atteint" : "En cours · reste " + fmtClock(it.target * 1000 - el + 999))
         : done ? "Objectif atteint" : (el > 0 ? "En pause · " + Math.floor(p * 100) + " %" : "Toucher pour démarrer");
     });
     document.getElementById("sumDone").textContent = fmtTotal(doneMs);
@@ -353,6 +394,15 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
   function renderTools() {
     toolsEl.innerHTML = "";
     hintEl.hidden = editing;
+    hintEl.textContent = adjusting
+      ? "Ajoutez ou retirez des minutes à une activité, par exemple si vous avez oublié de lancer ou d'arrêter son minuteur. Un minuteur en cours continue de tourner."
+      : HINT;
+    if (adjusting) {
+      const ok = Object.assign(document.createElement("button"), { className: "btn primary", textContent: "Terminé" });
+      ok.onclick = () => { adjusting = false; render(); };
+      toolsEl.appendChild(ok);
+      return;
+    }
     if (confirmReset) {
       const c = document.createElement("div");
       c.className = "confirm";
@@ -368,6 +418,8 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     pauseAll.onclick = () => { state.items.forEach(x => { if (x.startedAt) { x.acc += Date.now() - x.startedAt; x.startedAt = null; } }); save(); render(); };
     const edit = Object.assign(document.createElement("button"), { className: "btn", textContent: "Modifier les activités" });
     edit.onclick = () => { editing = true; render(); };
+    const adj = Object.assign(document.createElement("button"), { className: "btn", textContent: "Ajuster le temps" });
+    adj.onclick = () => { adjusting = true; render(); };
     const reset = Object.assign(document.createElement("button"), { className: "btn", textContent: "Remettre à zéro" });
     reset.onclick = () => { confirmReset = true; renderTools(); };
     const lbl = document.createElement("label");
@@ -375,7 +427,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     lbl.innerHTML = '<input type="checkbox" id="single"> Un seul minuteur à la fois';
     lbl.querySelector("input").checked = state.single;
     lbl.querySelector("input").onchange = (e) => { state.single = e.target.checked; save(); };
-    toolsEl.append(pauseAll, edit, reset, lbl);
+    toolsEl.append(pauseAll, adj, edit, reset, lbl);
   }
 
   function renderEdit() {
