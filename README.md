@@ -13,7 +13,7 @@
 
 ## Ce que fait l'application
 
-Chaque activité de la journée a son propre minuteur et un objectif de temps. On touche une activité pour lancer son minuteur, on la retouche pour le mettre en pause. Une barre se remplit au fil du temps et un petit son retentit quand l'objectif est atteint.
+Chaque activité de la journée a son propre minuteur et un objectif de temps. On touche une activité pour lancer son minuteur, on la retouche pour le mettre en pause. Une barre se remplit au fil du temps. Quand l'objectif est atteint, un petit son retentit, le minuteur s'arrête et l'activité est masquée.
 
 | Activité    | Objectif |
 |-------------|----------|
@@ -30,6 +30,7 @@ Cette liste est celle de départ. On peut la changer dans l'application.
 ## Fonctions
 
 - **Lancer ou mettre en pause** un minuteur en touchant l'activité.
+- **Activités terminées masquées** : quand une activité atteint son objectif, son minuteur s'arrête et elle quitte la liste. Le lien « Afficher les activités terminées » les fait réapparaître.
 - **Tri des activités** : par avancement (les plus avancées en haut, puis par nom) ou par ordre alphabétique.
 - **Un seul minuteur à la fois** (option) : en lancer un met les autres en pause.
 - **Compteurs** pour les activités qui se comptent plutôt qu'elles ne se chronomètrent, comme les pompes (−1, +1, +10).

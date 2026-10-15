@@ -83,6 +83,21 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
 .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* Completed activities: hidden behind a toggle */
+.donebar {
+  align-self: center; margin-top: 2px; padding: 8px 12px; border: none; border-radius: 8px;
+  background: none; color: var(--done); font: 500 0.88rem var(--font-body); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
+}
+.donebar:hover { background: var(--done-fill); }
+.donebar:focus-visible { outline: 2px solid var(--done); outline-offset: 2px; }
+.empty {
+  display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center;
+  padding: 28px 16px; border: 1px dashed color-mix(in srgb, var(--done) 45%, var(--line));
+  border-radius: 12px; background: var(--done-fill); color: var(--muted); font-size: 0.9rem;
+}
+.empty b { font-family: var(--font-display); font-size: 1.15rem; color: var(--done); font-weight: 700; }
+
 .item {
   position: relative; overflow: hidden;
   display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 12px;
@@ -243,6 +258,8 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
   let state = load();
   let editing = false;
   let adjusting = false;
+  let showDone = false;
+  let needsRender = false;
   const HINT = "Touchez une activité pour lancer ou mettre en pause son minuteur. La progression se remet à zéro automatiquement chaque nouveau jour.";
   let confirmReset = false;
 
@@ -331,6 +348,8 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     const running = it.startedAt ? Date.now() - it.startedAt : 0;
     it.acc = Math.max(-running, it.acc + minutes * 60000);
     it.notified = progress(it) >= 1;
+    // Un minuteur en cours qui dépasse l'objectif par ajustement s'arrête aussi.
+    if (it.notified && it.startedAt) { it.acc += Date.now() - it.startedAt; it.startedAt = null; }
     save(); tick();
   }
 
@@ -340,7 +359,17 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     document.getElementById("sortbar").hidden = editing;
     document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === state.sort ? "true" : "false"));
     if (editing) return renderEdit();
-    sorted().forEach(it => {
+    // Les activités terminées sont masquées, sauf si un minuteur tourne encore ou si on les affiche.
+    const all = sorted();
+    const doneCount = all.filter(x => progress(x) >= 1 && !x.startedAt).length;
+    const visible = all.filter(x => showDone || progress(x) < 1 || x.startedAt);
+    if (!visible.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.innerHTML = "<b>Tout est fait pour aujourd'hui.</b><span>Toutes vos activités ont atteint leur objectif.</span>";
+      listEl.appendChild(empty);
+    }
+    visible.forEach(it => {
       const p = progress(it), done = p >= 1;
       if (it.type === "count") {
         const row = document.createElement("div");
@@ -392,6 +421,16 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
       btn.addEventListener("click", () => toggle(it.id));
       listEl.appendChild(btn);
     });
+    if (doneCount) {
+      const t = document.createElement("button");
+      t.type = "button"; t.className = "donebar"; t.id = "toggle-done";
+      t.setAttribute("aria-expanded", showDone ? "true" : "false");
+      t.textContent = showDone
+        ? "Masquer les activités terminées"
+        : "Afficher les activités terminées (" + doneCount + ")";
+      t.onclick = () => { showDone = !showDone; render(); };
+      listEl.appendChild(t);
+    }
     tick();
     renderTools();
   }
@@ -403,7 +442,12 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
       const el = elapsed(it), p = progress(it);
       doneMs += Math.min(el, it.target * 1000); planMs += it.target * 1000;
       if (p >= 1) finished++;
-      if (p >= 1 && !it.notified) { it.notified = true; save(); if (it.startedAt) chime(); }
+      if (p >= 1 && !it.notified) {
+        it.notified = true;
+        // Objectif atteint pendant que le minuteur tourne : on l'arrête, puis l'activité quitte la liste.
+        if (it.startedAt) { it.acc += Date.now() - it.startedAt; it.startedAt = null; chime(); if (!adjusting && !editing) needsRender = true; }
+        save();
+      }
       const row = listEl.querySelector('[data-id="' + it.id + '"]');
       if (!row) return;
       const done = p >= 1, running = !!it.startedAt;
@@ -508,6 +552,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
   setInterval(() => {
     if (state.date !== today()) { state = load(); save(); render(); return; }
     if (!editing) tick();
+    if (needsRender) { needsRender = false; render(); }
   }, 500);
 })();
 </script>
