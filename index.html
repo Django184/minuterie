@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ma journée</title>
-<meta name="theme-color" content="#F4F1F3" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#19141A" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F7F6F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141114" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,217 +13,184 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<style>
-html { color-scheme: light; -webkit-text-size-adjust: 100%; }
-:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-body { margin: 0; -webkit-tap-highlight-color: transparent; }
-[hidden] { display: none !important; }
-</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: one narrow column of tappable activity rows; each row's background fills like a gauge as time accrues. */
+/* Layout: a single quiet column. Each activity is one line of text with a hairline
+   progress track beneath it; no boxes. Secondary controls live behind "Options". */
 :root {
-  --bg: #F4F1F3;
-  --surface: #FFFFFF;
-  --fill: #EADCE5;
-  --line: #DDD3D9;
-  --fg: #231A24;
-  --muted: #6E6170;
+  --bg: #F7F6F7;
+  --fg: #1F1A20;
+  --muted: #8A808C;
+  --faint: #E7E2E7;
   --accent: #8B3E6C;
-  --accent-soft: #F3E3EC;
   --done: #2D7A67;
-  --done-fill: #D8EDE6;
-  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --danger: #B3372F;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #19141A; --surface: #221B24; --fill: #3A2535; --line: #3A2F3B;
-    --fg: #F1E9EF; --muted: #A898A6; --accent: #E08AB9; --accent-soft: #3B2433;
-    --done: #6FD0B4; --done-fill: #1E3A33; color-scheme: dark;
+    --bg: #141114; --fg: #EEE8EE; --muted: #8D828F; --faint: #2A242B;
+    --accent: #E08AB9; --done: #6FD0B4; --danger: #F08A80; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #19141A; --surface: #221B24; --fill: #3A2535; --line: #3A2F3B;
-  --fg: #F1E9EF; --muted: #A898A6; --accent: #E08AB9; --accent-soft: #3B2433;
-  --done: #6FD0B4; --done-fill: #1E3A33; color-scheme: dark;
+  --bg: #141114; --fg: #EEE8EE; --muted: #8D828F; --faint: #2A242B;
+  --accent: #E08AB9; --done: #6FD0B4; --danger: #F08A80; color-scheme: dark;
 }
+
 * { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+[hidden] { display: none !important; }
 body {
-  background: var(--bg); color: var(--fg);
-  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
-  padding-inline: 16px; padding-block: 28px 48px;
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--sans); font-size: 16px; line-height: 1.4;
+  padding-inline: 24px; padding-block: 44px 64px;
+  -webkit-tap-highlight-color: transparent;
 }
-.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
 
-header { display: flex; flex-direction: column; gap: 14px; }
-.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
-.date { color: var(--muted); font-size: 0.85rem; text-transform: capitalize; }
+/* Header */
+header { display: flex; flex-direction: column; gap: 22px; }
+.date { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 4px 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.015em; }
+.summary { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.big { font-family: var(--mono); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.big small, .count small { color: var(--muted); font-size: 0.85rem; }
+.count { font-size: 0.85rem; color: var(--muted); }
+.count b { font-family: var(--mono); font-weight: 500; color: var(--fg); }
+.track { height: 2px; background: var(--faint); border-radius: 2px; overflow: hidden; }
+.track > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s ease; }
 
-.summary { display: flex; flex-direction: column; gap: 8px; }
-.sum-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 0.9rem; color: var(--muted); }
-.sum-row strong { color: var(--fg); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
-.track { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
-.track > span { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
-
-.list { display: flex; flex-direction: column; gap: 10px; }
-
-/* Sort switch */
-.sortbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: -10px; font-size: 0.85rem; color: var(--muted); }
-.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
-.seg button {
-  font: 500 0.85rem var(--font-body); padding: 6px 12px; border-radius: 7px;
-  border: none; background: none; color: var(--muted); cursor: pointer;
+/* Activity list */
+.list { display: flex; flex-direction: column; }
+.row { display: flex; flex-direction: column; gap: 12px; padding-block: 18px; width: 100%; text-align: left; }
+button.row:active { opacity: .6; }
+.line { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.name { font-size: 1.06rem; font-weight: 500; min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 10px; }
+.time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 1rem; }
+.time .tg { color: var(--muted); font-size: 0.82rem; margin-left: 4px; }
+.row .track > span { transition: width .5s linear; }
+.row.idle .name { color: var(--fg); }
+.row.idle .track > span { background: var(--muted); }
+.row.started .track > span { background: var(--fg); opacity: .55; }
+.row.running .name, .row.running .el { color: var(--accent); }
+.row.running .track > span { background: var(--accent); opacity: 1; }
+.row.running .name::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none;
+  animation: pulse 1.6s ease-in-out infinite;
 }
-.seg button:hover { color: var(--fg); }
-.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.row.done .name, .row.done .time { color: var(--muted); }
+.row.done .name::after { content: "✓"; color: var(--done); font-size: 0.9rem; }
+.row.done .track > span { background: var(--done); opacity: 1; }
+@keyframes pulse { 50% { opacity: .25; } }
 
-/* Completed activities: hidden behind a toggle */
-.donebar {
-  align-self: center; margin-top: 2px; padding: 8px 12px; border: none; border-radius: 8px;
-  background: none; color: var(--done); font: 500 0.88rem var(--font-body); cursor: pointer;
-  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
-}
-.donebar:hover { background: var(--done-fill); }
-.donebar:focus-visible { outline: 2px solid var(--done); outline-offset: 2px; }
-.empty {
-  display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center;
-  padding: 28px 16px; border: 1px dashed color-mix(in srgb, var(--done) 45%, var(--line));
-  border-radius: 12px; background: var(--done-fill); color: var(--muted); font-size: 0.9rem;
-}
-.empty b { font-family: var(--font-display); font-size: 1.15rem; color: var(--done); font-weight: 700; }
-
-.item {
-  position: relative; overflow: hidden;
-  display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 12px;
-  width: 100%; padding: 14px 16px; text-align: left;
-  background: var(--surface); color: var(--fg);
-  border: 1px solid var(--line); border-radius: 12px;
-  font: inherit; cursor: pointer;
-  transition: border-color .2s, transform .1s;
-}
-.item:hover { border-color: var(--accent); }
-.item:active { transform: scale(0.995); }
-.item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.item .bar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--fill); z-index: 0; transition: width .5s linear; }
-.item > *:not(.bar) { position: relative; z-index: 1; }
-.item.running { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.item.done .bar { background: var(--done-fill); }
-.item.done { border-color: color-mix(in srgb, var(--done) 45%, var(--line)); }
-
-.icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
-.icon svg { width: 13px; height: 13px; fill: currentColor; }
-.item.running .icon { background: var(--accent); color: var(--surface); }
-.item.done .icon { background: var(--done); color: var(--surface); }
-
-.name { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.name b { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
-.name small { color: var(--muted); font-size: 0.78rem; }
-.item.running .name small { color: var(--accent); font-weight: 500; }
-.item.done .name small { color: var(--done); font-weight: 500; }
-
-.time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
-.time .el { font-size: 1.15rem; font-weight: 600; }
-.time .tg { font-size: 0.75rem; color: var(--muted); }
-
-/* Counter rows (pompes) */
-.item.count { cursor: default; grid-template-columns: 28px 1fr auto; }
-.item.count:active { transform: none; }
-.counter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-.counter .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 1.15rem; min-width: 4.5ch; text-align: right; }
-.counter .num span { font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+/* Small text buttons: counter steps and time adjustments */
+.steps { display: flex; gap: 2px; align-items: baseline; }
 .step {
-  font: 600 0.85rem var(--font-mono); padding: 6px 9px; border-radius: 8px;
-  border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer;
+  font-family: var(--mono); font-size: 0.85rem; color: var(--muted);
+  padding: 6px 8px; border-radius: 6px; min-width: 36px; text-align: center;
 }
-.step:hover { border-color: var(--accent); color: var(--accent); }
-.step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.step:hover { color: var(--fg); background: var(--faint); }
+.step:active { color: var(--accent); }
+.adjust-steps { display: grid; grid-template-columns: repeat(6, 1fr); }
+.adjust-steps .step { padding: 8px 0; }
+.adjust-steps .step.plus { color: var(--fg); }
 
-/* Adjust mode: time rows get a full-width row of ± minute buttons */
-.item.adjust { cursor: default; }
-.item.adjust:active { transform: none; }
-.item.adjust:hover { border-color: var(--line); }
-.item.adjust.running, .item.adjust.running:hover { border-color: var(--accent); }
-.item.adjust .steps { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-.item.adjust .step { padding: 8px 0; }
-.item.adjust .step.minus { color: var(--muted); }
-.item.adjust .step.minus:hover { color: var(--accent); }
+.more { align-self: flex-start; margin-top: 14px; font-size: 0.85rem; color: var(--muted); padding: 6px 0; }
+.more:hover { color: var(--fg); }
+.empty { padding-block: 24px; display: flex; flex-direction: column; gap: 4px; }
+.empty b { font-weight: 500; color: var(--done); }
+.empty span { color: var(--muted); font-size: 0.9rem; }
 
-/* Toolbar */
-.tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.btn {
-  font: 500 0.88rem var(--font-body); padding: 8px 14px; border-radius: 9px;
-  border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer;
-}
-.btn:hover { border-color: var(--accent); }
-.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
-.btn.danger { color: #B3372F; border-color: color-mix(in srgb, #B3372F 40%, var(--line)); }
-.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); margin-left: auto; cursor: pointer; }
-.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
-.confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 0.88rem; }
+/* Mode banner (adjust / edit) */
+.mode { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.mode p { margin: 0; font-size: 0.85rem; color: var(--muted); max-width: 34ch; }
+.pill { background: var(--fg); color: var(--bg); padding: 9px 18px; border-radius: 99px; font-size: 0.9rem; font-weight: 500; white-space: nowrap; }
+
+/* Options */
+.options-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); padding: 6px 0; }
+.options-toggle:hover { color: var(--fg); }
+.options-toggle svg { width: 12px; height: 12px; transition: transform .2s; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.options-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.panel { display: flex; flex-direction: column; margin-top: 8px; }
+.opt { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 52px; border-top: 1px solid var(--faint); font-size: 0.95rem; width: 100%; text-align: left; }
+.opt:last-of-type { border-bottom: 1px solid var(--faint); }
+button.opt:hover { color: var(--accent); }
+.opt .chev { color: var(--muted); }
+.opt.danger { color: var(--danger); }
+.seg { display: flex; gap: 14px; }
+.seg button { color: var(--muted); font-size: 0.9rem; padding: 4px 0; border-bottom: 1px solid transparent; }
+.seg button[aria-pressed="true"] { color: var(--fg); border-bottom-color: var(--fg); }
+.switch { position: relative; width: 38px; height: 22px; flex: none; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--faint); transition: background .2s; pointer-events: none; }
+.switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--bg); box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .2s; }
+.switch input:checked + span { background: var(--accent); }
+.switch input:checked + span::after { transform: translateX(16px); }
+.switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; }
+.confirm { display: flex; gap: 18px; align-items: center; }
+.confirm button { font-size: 0.9rem; }
+.confirm .yes { color: var(--danger); font-weight: 500; }
+.confirm .no { color: var(--muted); }
+.hint { margin: 14px 0 0; font-size: 0.8rem; color: var(--muted); max-width: 52ch; }
 
 /* Edit mode */
-.edit-row { display: grid; grid-template-columns: 1fr 92px auto; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.edit-row input, .add select, .add input {
-  font: inherit; font-size: 0.92rem; padding: 7px 9px; border-radius: 8px; min-width: 0; width: 100%;
-  border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+.edit-row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding-block: 10px; border-bottom: 1px solid var(--faint); }
+.edit-row input, .add input, .add select {
+  font: inherit; color: var(--fg); background: transparent; border: 0; border-radius: 0;
+  padding: 8px 0; min-width: 0; width: 100%;
 }
-.edit-row input:focus, .add input:focus, .add select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
-.unit { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--muted); }
-.del { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 1.2rem; padding: 4px 8px; border-radius: 6px; }
-.del:hover { color: #B3372F; background: var(--bg); }
-.add { display: grid; grid-template-columns: 1fr 110px 90px auto; gap: 8px; align-items: center; }
-.hint { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.edit-row input[type="text"] { font-weight: 500; }
+.unit { display: flex; align-items: baseline; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+.unit input { width: 5.5ch; text-align: right; font-family: var(--mono); color: var(--fg); }
+.del { color: var(--muted); font-size: 1.2rem; width: 32px; height: 32px; border-radius: 6px; }
+.del:hover { color: var(--danger); background: var(--faint); }
+.add { display: grid; grid-template-columns: 1fr 5.5ch auto auto; gap: 12px; align-items: center; padding-block: 10px; margin-top: 8px; }
+.add input, .add select { border-bottom: 1px solid var(--faint); }
+.add input[name="target"] { font-family: var(--mono); text-align: right; }
+.add select { color: var(--muted); font-size: 0.9rem; }
+.add .addbtn { color: var(--accent); font-weight: 500; font-size: 0.9rem; }
 
-@media (max-width: 480px) {
-  h1 { font-size: 1.6rem; }
-  .add { grid-template-columns: 1fr 1fr; }
+@media (max-width: 420px) {
+  body { padding-inline: 20px; }
+  .add { grid-template-columns: 5.5ch auto 1fr; row-gap: 4px; }
   .add input[name="name"] { grid-column: 1 / -1; }
-  .item.count { grid-template-columns: 28px 1fr; }
-  .item.count .counter { grid-column: 1 / -1; justify-content: flex-start; }
-  .toggle { margin-left: 0; }
+  .add .addbtn { justify-self: end; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .item, .item .bar, .track > span { transition: none; }
+  .track > span, .row .track > span, .options-toggle svg, .switch span, .switch span::after { transition: none; }
+  .row.running .name::before { animation: none; }
 }
 </style>
 </head>
 <body>
-
-
 <div class="wrap">
   <header>
-    <div class="top">
+    <div>
+      <div class="date" id="date"></div>
       <h1>Ma journée</h1>
-      <span class="date" id="date"></span>
     </div>
-    <div class="summary">
-      <div class="sum-row">
-        <span>Temps fait <strong id="sumDone">0:00</strong> sur <strong id="sumPlan">0:00</strong></span>
-        <span><strong id="sumCount">0/0</strong> terminées</span>
+    <div>
+      <div class="summary">
+        <span class="big"><span id="sumDone">0h00</span> <small>/ <span id="sumPlan">0h00</span></small></span>
+        <span class="count"><b id="sumCount">0/0</b> terminées</span>
       </div>
-      <div class="track"><span id="sumBar"></span></div>
+      <div class="track" style="margin-top:12px"><span id="sumBar"></span></div>
     </div>
   </header>
 
-  <div class="sortbar" id="sortbar" role="group" aria-label="Trier les activités">
-    <span>Trier par</span>
-    <div class="seg">
-      <button type="button" id="sort-progress" data-sort="progress">Avancement</button>
-      <button type="button" id="sort-alpha" data-sort="alpha">A–Z</button>
-    </div>
-  </div>
+  <div class="mode" id="mode" hidden></div>
 
   <div class="list" id="list"></div>
 
-  <div class="tools" id="tools"></div>
-  <p class="hint" id="hint">Touchez une activité pour lancer ou mettre en pause son minuteur. La progression se remet à zéro automatiquement chaque nouveau jour.</p>
+  <footer id="footer"></footer>
 </div>
 
 <script>
@@ -259,9 +226,9 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
   let editing = false;
   let adjusting = false;
   let showDone = false;
-  let needsRender = false;
-  const HINT = "Touchez une activité pour lancer ou mettre en pause son minuteur. La progression se remet à zéro automatiquement chaque nouveau jour.";
+  let optionsOpen = false;
   let confirmReset = false;
+  let needsRender = false;
 
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -282,8 +249,9 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     const t = Math.floor(ms / 60000);
     return Math.floor(t / 60) + "h" + String(t % 60).padStart(2, "0");
   }
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  // Short chime when a target is reached (only plays after the user has interacted)
+  // Petit son quand un objectif est atteint (seulement après une interaction).
   let actx = null;
   function chime() {
     try {
@@ -300,14 +268,11 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     } catch (e) {}
   }
 
-  const ICON_PLAY = '<svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z"/></svg>';
-  const ICON_PAUSE = '<svg viewBox="0 0 12 12"><path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z"/></svg>';
-  const ICON_DONE = '<svg viewBox="0 0 12 12"><path d="M4.6 8.6 1.9 5.9 1 6.8l3.6 3.6L11 4l-.9-.9z"/></svg>';
-  const ICON_COUNT = '<svg viewBox="0 0 12 12"><path d="M5.25 1.5h1.5v3.75h3.75v1.5H6.75v3.75h-1.5V6.75H1.5v-1.5h3.75z"/></svg>';
-
   const listEl = document.getElementById("list");
-  const toolsEl = document.getElementById("tools");
-  const hintEl = document.getElementById("hint");
+  const footEl = document.getElementById("footer");
+  const modeEl = document.getElementById("mode");
+
+  const pauseAll = () => state.items.forEach(x => { if (x.startedAt) { x.acc += Date.now() - x.startedAt; x.startedAt = null; } });
 
   function toggle(id) {
     const it = state.items.find(x => x.id === id);
@@ -315,7 +280,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     if (it.startedAt) {
       it.acc += Date.now() - it.startedAt; it.startedAt = null;
     } else {
-      if (state.single) state.items.forEach(x => { if (x.startedAt) { x.acc += Date.now() - x.startedAt; x.startedAt = null; } });
+      if (state.single) pauseAll();
       it.startedAt = Date.now();
       if (actx && actx.state === "suspended") actx.resume();
     }
@@ -329,18 +294,6 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     if (before < it.target && it.acc >= it.target) chime();
     save(); render();
   }
-  // Ordre d'affichage : le plus avancé d'abord (égalités par nom), ou par nom.
-  // Calculé seulement au rendu, pour que les lignes ne bougent pas pendant qu'un minuteur tourne.
-  const byName = (a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base", numeric: true });
-  function sorted() {
-    const list = state.items.slice();
-    if (state.sort === "alpha") return list.sort(byName);
-    return list.sort((a, b) => (Math.min(1, progress(b)) - Math.min(1, progress(a))) || byName(a, b));
-  }
-  document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
-    state.sort = b.dataset.sort; save(); render();
-  }));
-
   // Ajoute ou retire des minutes au temps déjà fait, sans arrêter le minuteur.
   function adjust(id, minutes) {
     const it = state.items.find(x => x.id === id);
@@ -353,86 +306,86 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     save(); tick();
   }
 
+  // Ordre d'affichage : le plus avancé d'abord (égalités par nom), ou par nom.
+  // Calculé seulement au rendu, pour que les lignes ne bougent pas pendant qu'un minuteur tourne.
+  const byName = (a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base", numeric: true });
+  function sorted() {
+    const list = state.items.slice();
+    if (state.sort === "alpha") return list.sort(byName);
+    return list.sort((a, b) => (Math.min(1, progress(b)) - Math.min(1, progress(a))) || byName(a, b));
+  }
+
   function render() {
     listEl.innerHTML = "";
-    listEl.classList.toggle("adjusting", adjusting);
-    document.getElementById("sortbar").hidden = editing;
-    document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === state.sort ? "true" : "false"));
-    if (editing) return renderEdit();
+    renderMode();
+    if (editing) { renderEdit(); renderFooter(); return; }
+
     // Les activités terminées sont masquées, sauf si un minuteur tourne encore ou si on les affiche.
     const all = sorted();
     const doneCount = all.filter(x => progress(x) >= 1 && !x.startedAt).length;
     const visible = all.filter(x => showDone || progress(x) < 1 || x.startedAt);
+
     if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "empty";
       empty.innerHTML = "<b>Tout est fait pour aujourd'hui.</b><span>Toutes vos activités ont atteint leur objectif.</span>";
       listEl.appendChild(empty);
     }
+
     visible.forEach(it => {
-      const p = progress(it), done = p >= 1;
       if (it.type === "count") {
+        const p = progress(it), done = p >= 1;
         const row = document.createElement("div");
-        row.className = "item count" + (done ? " done" : "");
+        row.className = "row" + (done ? " done" : it.acc > 0 ? " started" : " idle");
         row.innerHTML =
-          '<div class="bar" style="width:' + Math.min(100, p * 100) + '%"></div>' +
-          '<div class="icon">' + (done ? ICON_DONE : ICON_COUNT) + '</div>' +
-          '<div class="name"><b></b><small>' + (done ? "Objectif atteint" : "Compteur") + '</small></div>' +
-          '<div class="counter">' +
-            '<button class="step" data-n="-1" aria-label="Retirer 1">−1</button>' +
-            '<button class="step" data-n="1" aria-label="Ajouter 1">+1</button>' +
-            '<button class="step" data-n="10" aria-label="Ajouter 10">+10</button>' +
-            '<div class="num">' + it.acc + ' <span>/ ' + it.target + '</span></div>' +
-          '</div>';
-        row.querySelector("b").textContent = it.name;
+          '<div class="line">' +
+            '<span class="name">' + esc(it.name) + '</span>' +
+            '<span class="steps">' +
+              '<button class="step" data-n="-1" aria-label="Retirer 1">−1</button>' +
+              '<button class="step" data-n="1" aria-label="Ajouter 1">+1</button>' +
+              '<button class="step" data-n="10" aria-label="Ajouter 10">+10</button>' +
+              '<span class="time" style="margin-left:8px">' + it.acc + '<span class="tg">/ ' + it.target + '</span></span>' +
+            '</span>' +
+          '</div>' +
+          '<div class="track"><span style="width:' + Math.min(100, p * 100) + '%"></span></div>';
         row.querySelectorAll(".step").forEach(b => b.addEventListener("click", () => bump(it.id, +b.dataset.n)));
         listEl.appendChild(row);
         return;
       }
+      const row = document.createElement(adjusting ? "div" : "button");
+      row.className = "row";
+      row.dataset.id = it.id;
+      row.innerHTML =
+        '<div class="line">' +
+          '<span class="name">' + esc(it.name) + '</span>' +
+          '<span class="time"><span class="el"></span><span class="tg"></span></span>' +
+        '</div>' +
+        '<div class="track"><span></span></div>' +
+        (adjusting ? '<div class="adjust-steps">' + [-15, -5, -1, 1, 5, 15].map(m =>
+          '<button class="step' + (m > 0 ? " plus" : "") + '" data-m="' + m + '" aria-label="' + (m < 0 ? "Retirer " : "Ajouter ") + Math.abs(m) + ' minutes">' +
+          (m < 0 ? "−" : "+") + Math.abs(m) + '</button>').join("") + '</div>' : '');
       if (adjusting) {
-        const row = document.createElement("div");
-        row.className = "item adjust" + (it.startedAt ? " running" : "") + (done ? " done" : "");
-        row.dataset.id = it.id;
-        row.innerHTML =
-          '<div class="bar"></div>' +
-          '<div class="icon"></div>' +
-          '<div class="name"><b></b><small></small></div>' +
-          '<div class="time"><span class="el"></span><span class="tg">/ ' + fmtShort(it.target) + '</span></div>' +
-          '<div class="steps">' +
-            [-15, -5, -1, 1, 5, 15].map(m =>
-              '<button class="step' + (m < 0 ? " minus" : "") + '" data-m="' + m + '" aria-label="' + (m < 0 ? "Retirer " : "Ajouter ") + Math.abs(m) + ' minutes">' +
-              (m < 0 ? "−" : "+") + Math.abs(m) + '</button>').join("") +
-          '</div>';
-        row.querySelector("b").textContent = it.name;
         row.querySelectorAll(".step").forEach(b => b.addEventListener("click", () => adjust(it.id, +b.dataset.m)));
-        listEl.appendChild(row);
-        return;
+      } else {
+        row.type = "button";
+        row.setAttribute("aria-pressed", it.startedAt ? "true" : "false");
+        row.addEventListener("click", () => toggle(it.id));
       }
-      const btn = document.createElement("button");
-      btn.className = "item" + (it.startedAt ? " running" : "") + (done ? " done" : "");
-      btn.dataset.id = it.id;
-      btn.setAttribute("aria-pressed", it.startedAt ? "true" : "false");
-      btn.innerHTML =
-        '<div class="bar"></div>' +
-        '<div class="icon"></div>' +
-        '<div class="name"><b></b><small></small></div>' +
-        '<div class="time"><span class="el"></span><span class="tg">/ ' + fmtShort(it.target) + '</span></div>';
-      btn.querySelector("b").textContent = it.name;
-      btn.addEventListener("click", () => toggle(it.id));
-      listEl.appendChild(btn);
+      listEl.appendChild(row);
     });
+
     if (doneCount) {
       const t = document.createElement("button");
-      t.type = "button"; t.className = "donebar"; t.id = "toggle-done";
+      t.type = "button"; t.className = "more"; t.id = "toggle-done";
       t.setAttribute("aria-expanded", showDone ? "true" : "false");
       t.textContent = showDone
         ? "Masquer les activités terminées"
-        : "Afficher les activités terminées (" + doneCount + ")";
+        : (doneCount === 1 ? "1 activité terminée · afficher" : doneCount + " activités terminées · afficher");
       t.onclick = () => { showDone = !showDone; render(); };
       listEl.appendChild(t);
     }
     tick();
-    renderTools();
+    renderFooter();
   }
 
   function tick() {
@@ -450,62 +403,83 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
       }
       const row = listEl.querySelector('[data-id="' + it.id + '"]');
       if (!row) return;
-      const done = p >= 1, running = !!it.startedAt;
-      row.classList.toggle("done", done);
-      row.querySelector(".bar").style.width = Math.min(100, p * 100) + "%";
-      row.querySelector(".icon").innerHTML = running ? ICON_PAUSE : (done ? ICON_DONE : ICON_PLAY);
-      const over = el - it.target * 1000;
-      row.querySelector(".el").textContent = done && over >= 1000 ? fmtClock(it.target * 1000) + " +" + fmtClock(over) : fmtClock(el);
-      row.querySelector("small").textContent = adjusting ? (el > 0 ? Math.floor(p * 100) + " % de l'objectif" + (running ? " · en cours" : "") : "Pas encore commencé") : running ?(done ? "En cours · objectif atteint" : "En cours · reste " + fmtClock(it.target * 1000 - el + 999))
-        : done ? "Objectif atteint" : (el > 0 ? "En pause · " + Math.floor(p * 100) + " %" : "Toucher pour démarrer");
+      const done = p >= 1, running = !!it.startedAt, started = el >= 1000 || running;
+      row.classList.toggle("running", running);
+      row.classList.toggle("done", done && !running);
+      row.classList.toggle("started", started && !done && !running);
+      row.classList.toggle("idle", !started);
+      row.querySelector(".track > span").style.width = Math.min(100, p * 100) + "%";
+      row.querySelector(".el").textContent = started ? fmtClock(el) : "";
+      row.querySelector(".tg").textContent = started ? "/ " + fmtShort(it.target) : fmtShort(it.target);
+      row.querySelector(".tg").style.marginLeft = started ? "" : "0";
     });
     document.getElementById("sumDone").textContent = fmtTotal(doneMs);
     document.getElementById("sumPlan").textContent = fmtTotal(planMs);
     document.getElementById("sumCount").textContent = finished + "/" + state.items.length;
     document.getElementById("sumBar").style.width = (planMs ? Math.min(100, doneMs / planMs * 100) : 0) + "%";
-    document.title = (() => {
-      const r = state.items.find(x => x.startedAt);
-      return r ? "▶ " + fmtClock(elapsed(r)) + " · " + r.name : "Ma journée";
-    })();
+    const r = state.items.find(x => x.startedAt);
+    document.title = r ? fmtClock(elapsed(r)) + " · " + r.name : "Ma journée";
   }
 
-  function renderTools() {
-    toolsEl.innerHTML = "";
-    hintEl.hidden = editing;
-    hintEl.textContent = adjusting
-      ? "Ajoutez ou retirez des minutes à une activité, par exemple si vous avez oublié de lancer ou d'arrêter son minuteur. Un minuteur en cours continue de tourner."
-      : HINT;
-    if (adjusting) {
-      const ok = Object.assign(document.createElement("button"), { className: "btn primary", textContent: "Terminé" });
-      ok.onclick = () => { adjusting = false; render(); };
-      toolsEl.appendChild(ok);
-      return;
-    }
+  // Bandeau des modes « Ajuster le temps » et « Modifier les activités ».
+  function renderMode() {
+    modeEl.hidden = !(adjusting || editing);
+    if (modeEl.hidden) return;
+    modeEl.innerHTML = '<p></p><button class="pill" type="button" id="mode-done">Terminé</button>';
+    modeEl.querySelector("p").textContent = adjusting
+      ? "Ajoutez ou retirez des minutes, par exemple si vous avez oublié de lancer ou d'arrêter un minuteur."
+      : "Renommez, changez les objectifs, ajoutez ou supprimez des activités.";
+    modeEl.querySelector("button").onclick = () => {
+      if (editing) state.items = state.items.filter(x => x.name.trim());
+      editing = false; adjusting = false; save(); render();
+    };
+  }
+
+  function renderFooter() {
+    footEl.innerHTML = "";
+    if (editing || adjusting) return;
+    const tgl = document.createElement("button");
+    tgl.type = "button"; tgl.className = "options-toggle"; tgl.id = "options-toggle";
+    tgl.setAttribute("aria-expanded", optionsOpen ? "true" : "false");
+    tgl.innerHTML = 'Options <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>';
+    tgl.onclick = () => { optionsOpen = !optionsOpen; confirmReset = false; renderFooter(); };
+    footEl.appendChild(tgl);
+    if (!optionsOpen) return;
+
+    const panel = document.createElement("div");
+    panel.className = "panel";
+    const running = state.items.some(x => x.startedAt);
+    panel.innerHTML =
+      '<div class="opt"><span>Trier par</span><span class="seg">' +
+        '<button type="button" data-sort="progress" id="sort-progress">Avancement</button>' +
+        '<button type="button" data-sort="alpha" id="sort-alpha">A–Z</button></span></div>' +
+      '<div class="opt"><label for="single">Un seul minuteur à la fois</label>' +
+        '<span class="switch"><input type="checkbox" id="single" role="switch"><span></span></span></div>' +
+      '<button type="button" class="opt" id="opt-adjust"><span>Ajuster le temps</span><span class="chev">›</span></button>' +
+      '<button type="button" class="opt" id="opt-edit"><span>Modifier les activités</span><span class="chev">›</span></button>' +
+      (running ? '<button type="button" class="opt" id="opt-pause"><span>Tout mettre en pause</span></button>' : '') +
+      (confirmReset
+        ? '<div class="opt"><span>Tout remettre à zéro ?</span><span class="confirm"><button type="button" class="no" id="reset-no">Annuler</button><button type="button" class="yes" id="reset-yes">Remettre à zéro</button></span></div>'
+        : '<button type="button" class="opt danger" id="opt-reset"><span>Remettre à zéro</span></button>') +
+      '<p class="hint">Touchez une activité pour lancer ou mettre en pause son minuteur. Une activité disparaît quand elle atteint son objectif. Tout repart à zéro chaque nouveau jour.</p>';
+
+    panel.querySelectorAll(".seg button").forEach(b => {
+      b.setAttribute("aria-pressed", b.dataset.sort === state.sort ? "true" : "false");
+      b.onclick = () => { state.sort = b.dataset.sort; save(); render(); };
+    });
+    const single = panel.querySelector("#single");
+    single.checked = state.single;
+    single.onchange = () => { state.single = single.checked; save(); };
+    panel.querySelector("#opt-adjust").onclick = () => { adjusting = true; optionsOpen = false; render(); window.scrollTo({ top: 0 }); };
+    panel.querySelector("#opt-edit").onclick = () => { editing = true; optionsOpen = false; render(); window.scrollTo({ top: 0 }); };
+    if (running) panel.querySelector("#opt-pause").onclick = () => { pauseAll(); save(); render(); };
     if (confirmReset) {
-      const c = document.createElement("div");
-      c.className = "confirm";
-      c.innerHTML = '<span>Remettre tous les minuteurs à zéro ?</span>';
-      const yes = Object.assign(document.createElement("button"), { className: "btn danger", textContent: "Remettre à zéro" });
-      const no = Object.assign(document.createElement("button"), { className: "btn", textContent: "Annuler" });
-      yes.onclick = () => { state.items = state.items.map(fresh); confirmReset = false; save(); render(); };
-      no.onclick = () => { confirmReset = false; renderTools(); };
-      c.append(yes, no); toolsEl.appendChild(c);
-      return;
+      panel.querySelector("#reset-no").onclick = () => { confirmReset = false; renderFooter(); };
+      panel.querySelector("#reset-yes").onclick = () => { state.items = state.items.map(fresh); confirmReset = false; showDone = false; save(); render(); };
+    } else {
+      panel.querySelector("#opt-reset").onclick = () => { confirmReset = true; renderFooter(); };
     }
-    const pauseAll = Object.assign(document.createElement("button"), { className: "btn", textContent: "Tout mettre en pause" });
-    pauseAll.onclick = () => { state.items.forEach(x => { if (x.startedAt) { x.acc += Date.now() - x.startedAt; x.startedAt = null; } }); save(); render(); };
-    const edit = Object.assign(document.createElement("button"), { className: "btn", textContent: "Modifier les activités" });
-    edit.onclick = () => { editing = true; render(); };
-    const adj = Object.assign(document.createElement("button"), { className: "btn", textContent: "Ajuster le temps" });
-    adj.onclick = () => { adjusting = true; render(); };
-    const reset = Object.assign(document.createElement("button"), { className: "btn", textContent: "Remettre à zéro" });
-    reset.onclick = () => { confirmReset = true; renderTools(); };
-    const lbl = document.createElement("label");
-    lbl.className = "toggle";
-    lbl.innerHTML = '<input type="checkbox" id="single"> Un seul minuteur à la fois';
-    lbl.querySelector("input").checked = state.single;
-    lbl.querySelector("input").onchange = (e) => { state.single = e.target.checked; save(); };
-    toolsEl.append(pauseAll, adj, edit, reset, lbl);
+    footEl.appendChild(panel);
   }
 
   function renderEdit() {
@@ -514,9 +488,9 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
       row.className = "edit-row";
       const isT = it.type === "time";
       row.innerHTML =
-        '<input type="text" id="n-' + it.id + '" aria-label="Nom">' +
-        '<label class="unit"><input type="number" min="1" id="t-' + it.id + '" aria-label="Objectif">' + (isT ? "min" : "fois") + '</label>' +
-        '<button class="del" aria-label="Supprimer">×</button>';
+        '<input type="text" id="n-' + it.id + '" aria-label="Nom de l\'activité">' +
+        '<label class="unit"><input type="number" min="1" inputmode="numeric" id="t-' + it.id + '" aria-label="Objectif">' + (isT ? "min" : "fois") + '</label>' +
+        '<button class="del" type="button" aria-label="Supprimer">×</button>';
       const n = row.querySelector('input[type="text"]'), t = row.querySelector('input[type="number"]');
       n.value = it.name; t.value = isT ? Math.round(it.target / 60) : it.target;
       n.oninput = () => { it.name = n.value; save(); };
@@ -528,9 +502,9 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     form.className = "add";
     form.innerHTML =
       '<input name="name" id="add-name" placeholder="Nouvelle activité" required>' +
-      '<select name="type" id="add-type" aria-label="Type"><option value="time">Durée (min)</option><option value="count">Nombre</option></select>' +
-      '<input name="target" id="add-target" type="number" min="1" placeholder="30" required aria-label="Objectif">' +
-      '<button class="btn" type="submit">Ajouter</button>';
+      '<input name="target" id="add-target" type="number" min="1" inputmode="numeric" placeholder="30" required aria-label="Objectif">' +
+      '<select name="type" id="add-type" aria-label="Unité"><option value="time">min</option><option value="count">fois</option></select>' +
+      '<button class="addbtn" type="submit">Ajouter</button>';
     form.onsubmit = (e) => {
       e.preventDefault();
       const f = new FormData(form), type = f.get("type"), v = Math.max(1, +f.get("target") || 1);
@@ -538,12 +512,6 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
       save(); render();
     };
     listEl.appendChild(form);
-
-    toolsEl.innerHTML = "";
-    hintEl.hidden = true;
-    const ok = Object.assign(document.createElement("button"), { className: "btn primary", textContent: "Terminé" });
-    ok.onclick = () => { editing = false; state.items = state.items.filter(x => x.name.trim()); save(); render(); };
-    toolsEl.appendChild(ok);
   }
 
   document.getElementById("date").textContent = new Date().toLocaleDateString("fr-CH", { weekday: "long", day: "numeric", month: "long" });

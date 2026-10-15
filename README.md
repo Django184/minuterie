@@ -29,13 +29,16 @@ Cette liste est celle de départ. On peut la changer dans l'application.
 
 ## Fonctions
 
+L'écran principal reste épuré : la liste des activités, chacune avec une fine barre de progression. Les réglages sont rangés dans **Options**, en bas de l'écran.
+
+
 - **Lancer ou mettre en pause** un minuteur en touchant l'activité.
-- **Activités terminées masquées** : quand une activité atteint son objectif, son minuteur s'arrête et elle quitte la liste. Le lien « Afficher les activités terminées » les fait réapparaître.
-- **Tri des activités** : par avancement (les plus avancées en haut, puis par nom) ou par ordre alphabétique.
-- **Un seul minuteur à la fois** (option) : en lancer un met les autres en pause.
+- **Activités terminées masquées** : quand une activité atteint son objectif, son minuteur s'arrête et elle quitte la liste. Le lien « … terminée · afficher » sous la liste les fait réapparaître.
+- **Tri des activités** (Options) : par avancement (les plus avancées en haut, puis par nom) ou par ordre alphabétique.
+- **Un seul minuteur à la fois** (Options) : en lancer un met les autres en pause.
 - **Compteurs** pour les activités qui se comptent plutôt qu'elles ne se chronomètrent, comme les pompes (−1, +1, +10).
-- **Ajuster le temps** : ajouter ou retirer 1, 5 ou 15 minutes à une activité, par exemple quand on a oublié de lancer ou d'arrêter son minuteur.
-- **Modifier les activités** : renommer, changer les objectifs, en ajouter ou en supprimer.
+- **Ajuster le temps** (Options) : ajouter ou retirer 1, 5 ou 15 minutes à une activité, par exemple quand on a oublié de lancer ou d'arrêter son minuteur.
+- **Modifier les activités** (Options) : renommer, changer les objectifs, en ajouter ou en supprimer.
 - **Résumé de la journée** : temps fait sur temps prévu et nombre d'activités terminées.
 - **Remise à zéro automatique** chaque nouveau jour, ou à la main avec « Remettre à zéro ».
 - **Hors ligne** : une fois installée, l'application fonctionne sans connexion.
