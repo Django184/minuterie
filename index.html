@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ma journée</title>
+<meta name="theme-color" content="#F4F1F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#19141A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ma journée">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one narrow column of tappable activity rows; each row's background fills like a gauge as time accrues. */
+:root {
+  --bg: #F4F1F3;
+  --surface: #FFFFFF;
+  --fill: #EADCE5;
+  --line: #DDD3D9;
+  --fg: #231A24;
+  --muted: #6E6170;
+  --accent: #8B3E6C;
+  --accent-soft: #F3E3EC;
+  --done: #2D7A67;
+  --done-fill: #D8EDE6;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #19141A; --surface: #221B24; --fill: #3A2535; --line: #3A2F3B;
+    --fg: #F1E9EF; --muted: #A898A6; --accent: #E08AB9; --accent-soft: #3B2433;
+    --done: #6FD0B4; --done-fill: #1E3A33; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #19141A; --surface: #221B24; --fill: #3A2535; --line: #3A2F3B;
+  --fg: #F1E9EF; --muted: #A898A6; --accent: #E08AB9; --accent-soft: #3B2433;
+  --done: #6FD0B4; --done-fill: #1E3A33; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-inline: 16px; padding-block: 28px 48px;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+
+header { display: flex; flex-direction: column; gap: 14px; }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.date { color: var(--muted); font-size: 0.85rem; text-transform: capitalize; }
+
+.summary { display: flex; flex-direction: column; gap: 8px; }
+.sum-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 0.9rem; color: var(--muted); }
+.sum-row strong { color: var(--fg); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.track { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.track > span { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .4s ease; }
+
+.list { display: flex; flex-direction: column; gap: 10px; }
+
+.item {
+  position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 12px;
+  width: 100%; padding: 14px 16px; text-align: left;
+  background: var(--surface); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 12px;
+  font: inherit; cursor: pointer;
+  transition: border-color .2s, transform .1s;
+}
+.item:hover { border-color: var(--accent); }
+.item:active { transform: scale(0.995); }
+.item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.item .bar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--fill); z-index: 0; transition: width .5s linear; }
+.item > *:not(.bar) { position: relative; z-index: 1; }
+.item.running { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.item.done .bar { background: var(--done-fill); }
+.item.done { border-color: color-mix(in srgb, var(--done) 45%, var(--line)); }
+
+.icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.icon svg { width: 13px; height: 13px; fill: currentColor; }
+.item.running .icon { background: var(--accent); color: var(--surface); }
+.item.done .icon { background: var(--done); color: var(--surface); }
+
+.name { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.name b { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
+.name small { color: var(--muted); font-size: 0.78rem; }
+.item.running .name small { color: var(--accent); font-weight: 500; }
+.item.done .name small { color: var(--done); font-weight: 500; }
+
+.time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.time .el { font-size: 1.15rem; font-weight: 600; }
+.time .tg { font-size: 0.75rem; color: var(--muted); }
+
+/* Counter rows (pompes) */
+.item.count { cursor: default; grid-template-columns: 28px 1fr auto; }
+.item.count:active { transform: none; }
+.counter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.counter .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 1.15rem; min-width: 4.5ch; text-align: right; }
+.counter .num span { font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+.step {
+  font: 600 0.85rem var(--font-mono); padding: 6px 9px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer;
+}
+.step:hover { border-color: var(--accent); color: var(--accent); }
+.step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Toolbar */
+.tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn {
+  font: 500 0.88rem var(--font-body); padding: 8px 14px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.danger { color: #B3372F; border-color: color-mix(in srgb, #B3372F 40%, var(--line)); }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); margin-left: auto; cursor: pointer; }
+.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+.confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 0.88rem; }
+
+/* Edit mode */
+.edit-row { display: grid; grid-template-columns: 1fr 92px auto; gap: 8px; align-items: center; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.edit-row input, .add select, .add input {
+  font: inherit; font-size: 0.92rem; padding: 7px 9px; border-radius: 8px; min-width: 0; width: 100%;
+  border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+}
+.edit-row input:focus, .add input:focus, .add select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.unit { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--muted); }
+.del { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 1.2rem; padding: 4px 8px; border-radius: 6px; }
+.del:hover { color: #B3372F; background: var(--bg); }
+.add { display: grid; grid-template-columns: 1fr 110px 90px auto; gap: 8px; align-items: center; }
+.hint { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+@media (max-width: 480px) {
+  h1 { font-size: 1.6rem; }
+  .add { grid-template-columns: 1fr 1fr; }
+  .add input[name="name"] { grid-column: 1 / -1; }
+  .item.count { grid-template-columns: 28px 1fr; }
+  .item.count .counter { grid-column: 1 / -1; justify-content: flex-start; }
+  .toggle { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .item, .item .bar, .track > span { transition: none; }
+}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="top">
+      <h1>Ma journée</h1>
+      <span class="date" id="date"></span>
+    </div>
+    <div class="summary">
+      <div class="sum-row">
+        <span>Temps fait <strong id="sumDone">0:00</strong> sur <strong id="sumPlan">0:00</strong></span>
+        <span><strong id="sumCount">0/0</strong> terminées</span>
+      </div>
+      <div class="track"><span id="sumBar"></span></div>
+    </div>
+  </header>
+
+  <div class="list" id="list"></div>
+
+  <div class="tools" id="tools"></div>
+  <p class="hint" id="hint">Touchez une activité pour lancer ou mettre en pause son minuteur. La progression se remet à zéro automatiquement chaque nouveau jour.</p>
+</div>
+
+<script>
+(function () {
+  const KEY = "journee-timers-v1";
+  const DEFAULTS = [
+    { name: "Recrutement", type: "time", target: 120 * 60 },
+    { name: "Guitare", type: "time", target: 60 * 60 },
+    { name: "Allemand", type: "time", target: 90 * 60 },
+    { name: "Cours EPFL", type: "time", target: 120 * 60 },
+    { name: "Lecture", type: "time", target: 45 * 60 },
+    { name: "Yoga", type: "time", target: 20 * 60 },
+    { name: "Pompes", type: "count", target: 100 }
+  ];
+
+  const today = () => {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  };
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  const fresh = (it) => ({ id: it.id || uid(), name: it.name, type: it.type, target: it.target, acc: 0, startedAt: null, notified: false });
+
+  function load() {
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    if (!s || !Array.isArray(s.items)) s = { date: today(), single: true, items: DEFAULTS.map(fresh) };
+    if (s.date !== today()) { s.items = s.items.map(fresh); s.date = today(); }
+    if (typeof s.single !== "boolean") s.single = true;
+    return s;
+  }
+  let state = load();
+  let editing = false;
+  let confirmReset = false;
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  const elapsed = (it) => it.type === "count" ? it.acc : it.acc + (it.startedAt ? Date.now() - it.startedAt : 0);
+  const progress = (it) => it.target > 0 ? (it.type === "count" ? it.acc / it.target : elapsed(it) / (it.target * 1000)) : 0;
+
+  function fmtClock(ms) {
+    const t = Math.floor(ms / 1000);
+    const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+    return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(s).padStart(2, "0");
+  }
+  function fmtShort(sec) {
+    const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+    if (!h) return m + " min";
+    return h + "h" + (m ? String(m).padStart(2, "0") : "");
+  }
+  function fmtTotal(ms) {
+    const t = Math.floor(ms / 60000);
+    return Math.floor(t / 60) + "h" + String(t % 60).padStart(2, "0");
+  }
+
+  // Short chime when a target is reached (only plays after the user has interacted)
+  let actx = null;
+  function chime() {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.18].forEach((delay, i) => {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.frequency.value = i ? 880 : 660; o.type = "sine";
+        g.gain.setValueAtTime(0.0001, actx.currentTime + delay);
+        g.gain.exponentialRampToValueAtTime(0.25, actx.currentTime + delay + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + delay + 0.5);
+        o.connect(g).connect(actx.destination);
+        o.start(actx.currentTime + delay); o.stop(actx.currentTime + delay + 0.55);
+      });
+    } catch (e) {}
+  }
+
+  const ICON_PLAY = '<svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z"/></svg>';
+  const ICON_PAUSE = '<svg viewBox="0 0 12 12"><path d="M2.5 1.5h2.5v9H2.5zM7 1.5h2.5v9H7z"/></svg>';
+  const ICON_DONE = '<svg viewBox="0 0 12 12"><path d="M4.6 8.6 1.9 5.9 1 6.8l3.6 3.6L11 4l-.9-.9z"/></svg>';
+  const ICON_COUNT = '<svg viewBox="0 0 12 12"><path d="M5.25 1.5h1.5v3.75h3.75v1.5H6.75v3.75h-1.5V6.75H1.5v-1.5h3.75z"/></svg>';
+
+  const listEl = document.getElementById("list");
+  const toolsEl = document.getElementById("tools");
+  const hintEl = document.getElementById("hint");
+
+  function toggle(id) {
+    const it = state.items.find(x => x.id === id);
+    if (!it) return;
+    if (it.startedAt) {
+      it.acc += Date.now() - it.startedAt; it.startedAt = null;
+    } else {
+      if (state.single) state.items.forEach(x => { if (x.startedAt) { x.acc += Date.now() - x.startedAt; x.startedAt = null; } });
+      it.startedAt = Date.now();
+      if (actx && actx.state === "suspended") actx.resume();
+    }
+    save(); render();
+  }
+  function bump(id, n) {
+    const it = state.items.find(x => x.id === id);
+    if (!it) return;
+    const before = it.acc;
+    it.acc = Math.max(0, it.acc + n);
+    if (before < it.target && it.acc >= it.target) chime();
+    save(); render();
+  }
+
+  function render() {
+    listEl.innerHTML = "";
+    if (editing) return renderEdit();
+    state.items.forEach(it => {
+      const p = progress(it), done = p >= 1;
+      if (it.type === "count") {
+        const row = document.createElement("div");
+        row.className = "item count" + (done ? " done" : "");
+        row.innerHTML =
+          '<div class="bar" style="width:' + Math.min(100, p * 100) + '%"></div>' +
+          '<div class="icon">' + (done ? ICON_DONE : ICON_COUNT) + '</div>' +
+          '<div class="name"><b></b><small>' + (done ? "Objectif atteint" : "Compteur") + '</small></div>' +
+          '<div class="counter">' +
+            '<button class="step" data-n="-1" aria-label="Retirer 1">−1</button>' +
+            '<button class="step" data-n="1" aria-label="Ajouter 1">+1</button>' +
+            '<button class="step" data-n="10" aria-label="Ajouter 10">+10</button>' +
+            '<div class="num">' + it.acc + ' <span>/ ' + it.target + '</span></div>' +
+          '</div>';
+        row.querySelector("b").textContent = it.name;
+        row.querySelectorAll(".step").forEach(b => b.addEventListener("click", () => bump(it.id, +b.dataset.n)));
+        listEl.appendChild(row);
+        return;
+      }
+      const btn = document.createElement("button");
+      btn.className = "item" + (it.startedAt ? " running" : "") + (done ? " done" : "");
+      btn.dataset.id = it.id;
+      btn.setAttribute("aria-pressed", it.startedAt ? "true" : "false");
+      btn.innerHTML =
+        '<div class="bar"></div>' +
+        '<div class="icon"></div>' +
+        '<div class="name"><b></b><small></small></div>' +
+        '<div class="time"><span class="el"></span><span class="tg">/ ' + fmtShort(it.target) + '</span></div>';
+      btn.querySelector("b").textContent = it.name;
+      btn.addEventListener("click", () => toggle(it.id));
+      listEl.appendChild(btn);
+    });
+    tick();
+    renderTools();
+  }
+
+  function tick() {
+    let doneMs = 0, planMs = 0, finished = 0;
+    state.items.forEach(it => {
+      if (it.type === "count") { if (it.acc >= it.target) finished++; return; }
+      const el = elapsed(it), p = progress(it);
+      doneMs += Math.min(el, it.target * 1000); planMs += it.target * 1000;
+      if (p >= 1) finished++;
+      if (p >= 1 && !it.notified) { it.notified = true; save(); if (it.startedAt) chime(); }
+      const row = listEl.querySelector('[data-id="' + it.id + '"]');
+      if (!row) return;
+      const done = p >= 1, running = !!it.startedAt;
+      row.classList.toggle("done", done);
+      row.querySelector(".bar").style.width = Math.min(100, p * 100) + "%";
+      row.querySelector(".icon").innerHTML = running ? ICON_PAUSE : (done ? ICON_DONE : ICON_PLAY);
+      const over = el - it.target * 1000;
+      row.querySelector(".el").textContent = done && over >= 1000 ? fmtClock(it.target * 1000) + " +" + fmtClock(over) : fmtClock(el);
+      row.querySelector("small").textContent = running ? (done ? "En cours · objectif atteint" : "En cours · reste " + fmtClock(it.target * 1000 - el + 999))
+        : done ? "Objectif atteint" : (el > 0 ? "En pause · " + Math.floor(p * 100) + " %" : "Toucher pour démarrer");
+    });
+    document.getElementById("sumDone").textContent = fmtTotal(doneMs);
+    document.getElementById("sumPlan").textContent = fmtTotal(planMs);
+    document.getElementById("sumCount").textContent = finished + "/" + state.items.length;
+    document.getElementById("sumBar").style.width = (planMs ? Math.min(100, doneMs / planMs * 100) : 0) + "%";
+    document.title = (() => {
+      const r = state.items.find(x => x.startedAt);
+      return r ? "▶ " + fmtClock(elapsed(r)) + " · " + r.name : "Ma journée";
+    })();
+  }
+
+  function renderTools() {
+    toolsEl.innerHTML = "";
+    hintEl.hidden = editing;
+    if (confirmReset) {
+      const c = document.createElement("div");
+      c.className = "confirm";
+      c.innerHTML = '<span>Remettre tous les minuteurs à zéro ?</span>';
+      const yes = Object.assign(document.createElement("button"), { className: "btn danger", textContent: "Remettre à zéro" });
+      const no = Object.assign(document.createElement("button"), { className: "btn", textContent: "Annuler" });
+      yes.onclick = () => { state.items = state.items.map(fresh); confirmReset = false; save(); render(); };
+      no.onclick = () => { confirmReset = false; renderTools(); };
+      c.append(yes, no); toolsEl.appendChild(c);
+      return;
+    }
+    const pauseAll = Object.assign(document.createElement("button"), { className: "btn", textContent: "Tout mettre en pause" });
+    pauseAll.onclick = () => { state.items.forEach(x => { if (x.startedAt) { x.acc += Date.now() - x.startedAt; x.startedAt = null; } }); save(); render(); };
+    const edit = Object.assign(document.createElement("button"), { className: "btn", textContent: "Modifier les activités" });
+    edit.onclick = () => { editing = true; render(); };
+    const reset = Object.assign(document.createElement("button"), { className: "btn", textContent: "Remettre à zéro" });
+    reset.onclick = () => { confirmReset = true; renderTools(); };
+    const lbl = document.createElement("label");
+    lbl.className = "toggle";
+    lbl.innerHTML = '<input type="checkbox" id="single"> Un seul minuteur à la fois';
+    lbl.querySelector("input").checked = state.single;
+    lbl.querySelector("input").onchange = (e) => { state.single = e.target.checked; save(); };
+    toolsEl.append(pauseAll, edit, reset, lbl);
+  }
+
+  function renderEdit() {
+    state.items.forEach(it => {
+      const row = document.createElement("div");
+      row.className = "edit-row";
+      const isT = it.type === "time";
+      row.innerHTML =
+        '<input type="text" id="n-' + it.id + '" aria-label="Nom">' +
+        '<label class="unit"><input type="number" min="1" id="t-' + it.id + '" aria-label="Objectif">' + (isT ? "min" : "fois") + '</label>' +
+        '<button class="del" aria-label="Supprimer">×</button>';
+      const n = row.querySelector('input[type="text"]'), t = row.querySelector('input[type="number"]');
+      n.value = it.name; t.value = isT ? Math.round(it.target / 60) : it.target;
+      n.oninput = () => { it.name = n.value; save(); };
+      t.oninput = () => { const v = Math.max(1, +t.value || 1); it.target = isT ? v * 60 : v; it.notified = progress(it) >= 1; save(); };
+      row.querySelector(".del").onclick = () => { state.items = state.items.filter(x => x.id !== it.id); save(); render(); };
+      listEl.appendChild(row);
+    });
+    const form = document.createElement("form");
+    form.className = "add";
+    form.innerHTML =
+      '<input name="name" id="add-name" placeholder="Nouvelle activité" required>' +
+      '<select name="type" id="add-type" aria-label="Type"><option value="time">Durée (min)</option><option value="count">Nombre</option></select>' +
+      '<input name="target" id="add-target" type="number" min="1" placeholder="30" required aria-label="Objectif">' +
+      '<button class="btn" type="submit">Ajouter</button>';
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const f = new FormData(form), type = f.get("type"), v = Math.max(1, +f.get("target") || 1);
+      state.items.push(fresh({ name: f.get("name").trim() || "Activité", type, target: type === "time" ? v * 60 : v }));
+      save(); render();
+    };
+    listEl.appendChild(form);
+
+    toolsEl.innerHTML = "";
+    hintEl.hidden = true;
+    const ok = Object.assign(document.createElement("button"), { className: "btn primary", textContent: "Terminé" });
+    ok.onclick = () => { editing = false; state.items = state.items.filter(x => x.name.trim()); save(); render(); };
+    toolsEl.appendChild(ok);
+  }
+
+  document.getElementById("date").textContent = new Date().toLocaleDateString("fr-CH", { weekday: "long", day: "numeric", month: "long" });
+
+  render();
+  setInterval(() => {
+    if (state.date !== today()) { state = load(); save(); render(); return; }
+    if (!editing) tick();
+  }, 500);
+})();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
