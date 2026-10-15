@@ -72,6 +72,17 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
 
 .list { display: flex; flex-direction: column; gap: 10px; }
 
+/* Sort switch */
+.sortbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: -10px; font-size: 0.85rem; color: var(--muted); }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.seg button {
+  font: 500 0.85rem var(--font-body); padding: 6px 12px; border-radius: 7px;
+  border: none; background: none; color: var(--muted); cursor: pointer;
+}
+.seg button:hover { color: var(--fg); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 .item {
   position: relative; overflow: hidden;
   display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 12px;
@@ -186,6 +197,14 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     </div>
   </header>
 
+  <div class="sortbar" id="sortbar" role="group" aria-label="Trier les activités">
+    <span>Trier par</span>
+    <div class="seg">
+      <button type="button" id="sort-progress" data-sort="progress">Avancement</button>
+      <button type="button" id="sort-alpha" data-sort="alpha">A–Z</button>
+    </div>
+  </div>
+
   <div class="list" id="list"></div>
 
   <div class="tools" id="tools"></div>
@@ -218,6 +237,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     if (!s || !Array.isArray(s.items)) s = { date: today(), single: true, items: DEFAULTS.map(fresh) };
     if (s.date !== today()) { s.items = s.items.map(fresh); s.date = today(); }
     if (typeof s.single !== "boolean") s.single = true;
+    if (s.sort !== "alpha" && s.sort !== "progress") s.sort = "progress";
     return s;
   }
   let state = load();
@@ -292,6 +312,18 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
     if (before < it.target && it.acc >= it.target) chime();
     save(); render();
   }
+  // Ordre d'affichage : le plus avancé d'abord (égalités par nom), ou par nom.
+  // Calculé seulement au rendu, pour que les lignes ne bougent pas pendant qu'un minuteur tourne.
+  const byName = (a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base", numeric: true });
+  function sorted() {
+    const list = state.items.slice();
+    if (state.sort === "alpha") return list.sort(byName);
+    return list.sort((a, b) => (Math.min(1, progress(b)) - Math.min(1, progress(a))) || byName(a, b));
+  }
+  document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+    state.sort = b.dataset.sort; save(); render();
+  }));
+
   // Ajoute ou retire des minutes au temps déjà fait, sans arrêter le minuteur.
   function adjust(id, minutes) {
     const it = state.items.find(x => x.id === id);
@@ -305,8 +337,10 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; marg
   function render() {
     listEl.innerHTML = "";
     listEl.classList.toggle("adjusting", adjusting);
+    document.getElementById("sortbar").hidden = editing;
+    document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === state.sort ? "true" : "false"));
     if (editing) return renderEdit();
-    state.items.forEach(it => {
+    sorted().forEach(it => {
       const p = progress(it), done = p >= 1;
       if (it.type === "count") {
         const row = document.createElement("div");

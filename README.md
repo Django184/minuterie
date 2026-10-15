@@ -30,6 +30,7 @@ Cette liste est celle de départ. On peut la changer dans l'application.
 ## Fonctions
 
 - **Lancer ou mettre en pause** un minuteur en touchant l'activité.
+- **Tri des activités** : par avancement (les plus avancées en haut, puis par nom) ou par ordre alphabétique.
 - **Un seul minuteur à la fois** (option) : en lancer un met les autres en pause.
 - **Compteurs** pour les activités qui se comptent plutôt qu'elles ne se chronomètrent, comme les pompes (−1, +1, +10).
 - **Ajuster le temps** : ajouter ou retirer 1, 5 ou 15 minutes à une activité, par exemple quand on a oublié de lancer ou d'arrêter son minuteur.
