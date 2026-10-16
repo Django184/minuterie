@@ -71,7 +71,20 @@ h1 { margin: 4px 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.0
 /* Activity list */
 .list { display: flex; flex-direction: column; }
 .row { display: flex; flex-direction: column; gap: 12px; padding-block: 18px; width: 100%; text-align: left; }
-button.row:active { opacity: .6; }
+.row[role="button"] { cursor: pointer; }
+.row[role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.row[role="button"] .line:active { opacity: .6; }
+
+/* Description dépliable */
+.desc-toggle { display: inline-grid; place-items: center; width: 28px; height: 28px; margin-block: -6px; margin-left: -4px; border-radius: 6px; color: var(--muted); flex: none; }
+.desc-toggle:hover { color: var(--fg); background: var(--faint); }
+.desc-toggle svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.6; transition: transform .2s; }
+.desc-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.desc { font-size: 0.9rem; line-height: 1.6; color: var(--muted); cursor: default; display: flex; flex-direction: column; gap: 6px; margin-top: -2px; }
+.desc p, .desc ul { margin: 0; }
+.desc ul { padding-left: 1.1em; }
+.desc li::marker { color: var(--muted); }
+.desc b { color: var(--fg); font-weight: 500; }
 .line { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
 .name { font-size: 1.06rem; font-weight: 500; min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 10px; }
 .time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 1rem; }
@@ -87,7 +100,7 @@ button.row:active { opacity: .6; }
   animation: pulse 1.6s ease-in-out infinite;
 }
 .row.done .name, .row.done .time { color: var(--muted); }
-.row.done .name::after { content: "✓"; color: var(--done); font-size: 0.9rem; }
+.row.done .name > span:first-child::after { margin-left: 8px; content: "✓"; color: var(--done); font-size: 0.9rem; }
 .row.done .track > span { background: var(--done); opacity: 1; }
 @keyframes pulse { 50% { opacity: .25; } }
 
@@ -142,7 +155,7 @@ button.opt:hover { color: var(--accent); }
 .hint { margin: 14px 0 0; font-size: 0.8rem; color: var(--muted); max-width: 52ch; }
 
 /* Edit mode */
-.edit-row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding-block: 10px; border-bottom: 1px solid var(--faint); }
+.edit-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 14px; align-items: center; padding-block: 10px; border-bottom: 1px solid var(--faint); }
 .edit-row input, .add input, .add select {
   font: inherit; color: var(--fg); background: transparent; border: 0; border-radius: 0;
   padding: 8px 0; min-width: 0; width: 100%;
@@ -152,6 +165,18 @@ button.opt:hover { color: var(--accent); }
 .unit input { width: 5.5ch; text-align: right; font-family: var(--mono); color: var(--fg); }
 .del { color: var(--muted); font-size: 1.2rem; width: 32px; height: 32px; border-radius: 6px; }
 .del:hover { color: var(--danger); background: var(--faint); }
+.edit-desc { grid-column: 1 / -1; margin-block: 2px 6px; }
+.descbtn { width: 32px; height: 32px; border-radius: 6px; color: var(--muted); display: grid; place-items: center; margin-right: -10px; }
+.descbtn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.descbtn:hover { color: var(--fg); background: var(--faint); }
+.descbtn.on { color: var(--accent); }
+.edit-desc textarea {
+  width: 100%; font: inherit; font-size: 0.9rem; line-height: 1.55; color: var(--fg);
+  background: transparent; border: 1px solid var(--faint); border-radius: 8px;
+  padding: 10px 12px; resize: none; overflow: hidden; min-height: 64px;
+}
+.edit-desc textarea::placeholder { color: var(--muted); opacity: .7; }
+.edit-desc textarea:focus { outline: none; border-color: var(--muted); }
 .add { display: grid; grid-template-columns: 1fr 5.5ch auto auto; gap: 12px; align-items: center; padding-block: 10px; margin-top: 8px; }
 .add input, .add select { border-bottom: 1px solid var(--faint); }
 .add input[name="target"] { font-family: var(--mono); text-align: right; }
@@ -165,7 +190,7 @@ button.opt:hover { color: var(--accent); }
   .add .addbtn { justify-self: end; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .track > span, .row .track > span, .options-toggle svg, .switch span, .switch span::after { transition: none; }
+  .track > span, .row .track > span, .options-toggle svg, .desc-toggle svg, .switch span, .switch span::after { transition: none; }
   .row.running .name::before { animation: none; }
 }
 </style>
@@ -211,7 +236,7 @@ button.opt:hover { color: var(--accent); }
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   };
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const fresh = (it) => ({ id: it.id || uid(), name: it.name, type: it.type, target: it.target, acc: 0, startedAt: null, notified: false });
+  const fresh = (it) => ({ id: it.id || uid(), name: it.name, type: it.type, target: it.target, desc: it.desc || "", acc: 0, startedAt: null, notified: false });
 
   function load() {
     let s = null;
@@ -229,6 +254,7 @@ button.opt:hover { color: var(--accent); }
   let optionsOpen = false;
   let confirmReset = false;
   let needsRender = false;
+  const openIds = new Set();   // descriptions dépliées
 
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -248,6 +274,42 @@ button.opt:hover { color: var(--accent); }
   function fmtTotal(ms) {
     const t = Math.floor(ms / 60000);
     return Math.floor(t / 60) + "h" + String(t % 60).padStart(2, "0");
+  }
+  function descHTML(text) {
+    const inline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    let html = "", list = [];
+    const flush = () => { if (list.length) { html += "<ul>" + list.map(l => "<li>" + inline(l) + "</li>").join("") + "</ul>"; list = []; } };
+    String(text).split(/\r?\n/).forEach(raw => {
+      const line = raw.trim();
+      if (!line) { flush(); return; }
+      const m = line.match(/^[-•*–]\s+(.*)$/);
+      if (m) list.push(m[1]); else { flush(); html += "<p>" + inline(line) + "</p>"; }
+    });
+    flush();
+    return html;
+  }
+  const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>';
+  // Nom + petite flèche si l'activité a une description, et le bloc de description.
+  function nameHTML(it) {
+    const has = (it.desc || "").trim();
+    const open = has && openIds.has(it.id);
+    return '<span class="name"><span>' + esc(it.name) + '</span>' +
+      (has ? '<button type="button" class="desc-toggle" aria-expanded="' + open + '" aria-label="Description de ' + esc(it.name) + '">' + CHEVRON + '</button>' : '') +
+      '</span>';
+  }
+  function descBlock(it) {
+    const has = (it.desc || "").trim();
+    return has ? '<div class="desc"' + (openIds.has(it.id) ? '' : ' hidden') + '>' + descHTML(it.desc) + '</div>' : '';
+  }
+  function wireDesc(row, it) {
+    const b = row.querySelector(".desc-toggle"), d = row.querySelector(".desc");
+    if (!b || !d) return;
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      d.hidden = !d.hidden;
+      b.setAttribute("aria-expanded", String(!d.hidden));
+      if (d.hidden) openIds.delete(it.id); else openIds.add(it.id);
+    });
   }
   const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -339,7 +401,7 @@ button.opt:hover { color: var(--accent); }
         row.className = "row" + (done ? " done" : it.acc > 0 ? " started" : " idle");
         row.innerHTML =
           '<div class="line">' +
-            '<span class="name">' + esc(it.name) + '</span>' +
+            nameHTML(it) +
             '<span class="steps">' +
               '<button class="step" data-n="-1" aria-label="Retirer 1">−1</button>' +
               '<button class="step" data-n="1" aria-label="Ajouter 1">+1</button>' +
@@ -347,19 +409,22 @@ button.opt:hover { color: var(--accent); }
               '<span class="time" style="margin-left:8px">' + it.acc + '<span class="tg">/ ' + it.target + '</span></span>' +
             '</span>' +
           '</div>' +
+          descBlock(it) +
           '<div class="track"><span style="width:' + Math.min(100, p * 100) + '%"></span></div>';
         row.querySelectorAll(".step").forEach(b => b.addEventListener("click", () => bump(it.id, +b.dataset.n)));
+        wireDesc(row, it);
         listEl.appendChild(row);
         return;
       }
-      const row = document.createElement(adjusting ? "div" : "button");
+      const row = document.createElement("div");
       row.className = "row";
       row.dataset.id = it.id;
       row.innerHTML =
         '<div class="line">' +
-          '<span class="name">' + esc(it.name) + '</span>' +
+          nameHTML(it) +
           '<span class="time"><span class="el"></span><span class="tg"></span></span>' +
         '</div>' +
+        descBlock(it) +
         '<div class="track"><span></span></div>' +
         (adjusting ? '<div class="adjust-steps">' + [-15, -5, -1, 1, 5, 15].map(m =>
           '<button class="step' + (m > 0 ? " plus" : "") + '" data-m="' + m + '" aria-label="' + (m < 0 ? "Retirer " : "Ajouter ") + Math.abs(m) + ' minutes">' +
@@ -367,10 +432,16 @@ button.opt:hover { color: var(--accent); }
       if (adjusting) {
         row.querySelectorAll(".step").forEach(b => b.addEventListener("click", () => adjust(it.id, +b.dataset.m)));
       } else {
-        row.type = "button";
+        row.setAttribute("role", "button");
+        row.tabIndex = 0;
         row.setAttribute("aria-pressed", it.startedAt ? "true" : "false");
-        row.addEventListener("click", () => toggle(it.id));
+        // Toucher la ligne lance ou met en pause ; toucher la description ne fait rien.
+        row.addEventListener("click", (e) => { if (!e.target.closest(".desc-toggle, .desc")) toggle(it.id); });
+        row.addEventListener("keydown", (e) => {
+          if (e.target === row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(it.id); }
+        });
       }
+      wireDesc(row, it);
       listEl.appendChild(row);
     });
 
@@ -428,7 +499,7 @@ button.opt:hover { color: var(--accent); }
     modeEl.innerHTML = '<p></p><button class="pill" type="button" id="mode-done">Terminé</button>';
     modeEl.querySelector("p").textContent = adjusting
       ? "Ajoutez ou retirez des minutes, par exemple si vous avez oublié de lancer ou d'arrêter un minuteur."
-      : "Renommez, changez les objectifs, ajoutez ou supprimez des activités.";
+      : "Renommez, changez les objectifs, ajoutez ou supprimez des activités. L'icône ≡ ajoute une description.";
     modeEl.querySelector("button").onclick = () => {
       if (editing) state.items = state.items.filter(x => x.name.trim());
       editing = false; adjusting = false; save(); render();
@@ -490,8 +561,28 @@ button.opt:hover { color: var(--accent); }
       row.innerHTML =
         '<input type="text" id="n-' + it.id + '" aria-label="Nom de l\'activité">' +
         '<label class="unit"><input type="number" min="1" inputmode="numeric" id="t-' + it.id + '" aria-label="Objectif">' + (isT ? "min" : "fois") + '</label>' +
-        '<button class="del" type="button" aria-label="Supprimer">×</button>';
+        '<button class="descbtn" type="button" aria-label="Description"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 3.5h10M2 7h10M2 10.5h6"/></svg></button>' +
+        '<button class="del" type="button" aria-label="Supprimer">×</button>' +
+        '<div class="edit-desc" hidden></div>';
       const n = row.querySelector('input[type="text"]'), t = row.querySelector('input[type="number"]');
+      const box = row.querySelector(".edit-desc"), dbtn = row.querySelector(".descbtn");
+      const showArea = (focus) => {
+        box.hidden = false; dbtn.classList.add("on"); dbtn.setAttribute("aria-expanded", "true");
+        box.innerHTML = '<textarea id="d-' + it.id + '" rows="2" aria-label="Description de l\'activité" placeholder="Description\n- Side plank : 2×45 s / côté\n- Hollow hold : 3×30 s"></textarea>';
+        const ta = box.querySelector("textarea");
+        const grow = () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 2 + "px"; };
+        ta.value = it.desc || "";
+        ta.oninput = () => { it.desc = ta.value; save(); grow(); };
+        requestAnimationFrame(grow);
+        if (focus) ta.focus();
+      };
+      dbtn.setAttribute("aria-expanded", "false");
+      if ((it.desc || "").trim()) showArea(false);
+      dbtn.onclick = () => {
+        if (box.hidden) showArea(true);
+        else if (!(it.desc || "").trim()) { box.hidden = true; box.innerHTML = ""; dbtn.classList.remove("on"); dbtn.setAttribute("aria-expanded", "false"); }
+        else box.querySelector("textarea").focus();
+      };
       n.value = it.name; t.value = isT ? Math.round(it.target / 60) : it.target;
       n.oninput = () => { it.name = n.value; save(); };
       t.oninput = () => { const v = Math.max(1, +t.value || 1); it.target = isT ? v * 60 : v; it.notified = progress(it) >= 1; save(); };

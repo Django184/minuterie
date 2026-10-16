@@ -39,6 +39,7 @@ L'écran principal reste épuré : la liste des activités, chacune avec une fin
 - **Compteurs** pour les activités qui se comptent plutôt qu'elles ne se chronomètrent, comme les pompes (−1, +1, +10).
 - **Ajuster le temps** (Options) : ajouter ou retirer 1, 5 ou 15 minutes à une activité, par exemple quand on a oublié de lancer ou d'arrêter son minuteur.
 - **Modifier les activités** (Options) : renommer, changer les objectifs, en ajouter ou en supprimer.
+- **Descriptions** : chaque activité peut avoir une description, par exemple le détail d'une séance. Dans « Modifier les activités », l'icône ≡ ouvre le champ. Dans la liste, une petite flèche à côté du nom déplie ou replie la description. Les lignes qui commencent par « - » ou « • » s'affichent en liste, et `**texte**` s'affiche en gras.
 - **Résumé de la journée** : temps fait sur temps prévu et nombre d'activités terminées.
 - **Remise à zéro automatique** chaque nouveau jour, ou à la main avec « Remettre à zéro ».
 - **Hors ligne** : une fois installée, l'application fonctionne sans connexion.
