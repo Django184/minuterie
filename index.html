@@ -178,6 +178,21 @@ button.opt:hover { color: var(--accent); }
 .edit-row input[type="text"] { font-weight: 500; }
 .unit { display: flex; align-items: baseline; gap: 6px; font-size: 0.85rem; color: var(--muted); }
 .unit input { width: 5.5ch; text-align: right; font-family: var(--mono); color: var(--fg); }
+.unit { position: relative; }
+.unit select, .add select {
+  -webkit-appearance: none; appearance: none; font: inherit; font-size: 0.85rem; color: var(--muted);
+  background: transparent; border: 0; border-radius: 0; padding: 8px 14px 8px 0; cursor: pointer;
+  text-align: right; text-align-last: right;
+}
+.unit select:hover, .add select:hover { color: var(--fg); }
+.unit::after, .add .sel::after {
+  content: ""; position: absolute; right: 2px; top: 50%; width: 5px; height: 5px; margin-top: -4px;
+  border-right: 1.3px solid var(--muted); border-bottom: 1.3px solid var(--muted); transform: rotate(45deg); pointer-events: none;
+}
+.add .sel { position: relative; }
+.add .sel select { width: 100%; text-align: left; text-align-last: left; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .del { color: var(--muted); font-size: 1.2rem; width: 32px; height: 32px; border-radius: 6px; }
 .del:hover { color: var(--danger); background: var(--faint); }
 .edit-desc { grid-column: 1 / -1; margin-block: 2px 6px; }
@@ -193,7 +208,7 @@ button.opt:hover { color: var(--accent); }
 .edit-desc textarea::placeholder { color: var(--muted); opacity: .7; }
 .edit-desc textarea:focus { outline: none; border-color: var(--muted); }
 .add { display: grid; grid-template-columns: 1fr 5.5ch auto auto; gap: 12px; align-items: center; padding-block: 10px; margin-top: 8px; }
-.add input, .add select { border-bottom: 1px solid var(--faint); }
+.add input, .add .sel { border-bottom: 1px solid var(--faint); }
 .add input[name="target"] { font-family: var(--mono); text-align: right; }
 .add select { color: var(--muted); font-size: 0.9rem; }
 .add .addbtn { color: var(--accent); font-weight: 500; font-size: 0.9rem; }
@@ -602,16 +617,18 @@ button.opt:hover { color: var(--accent); }
     footEl.appendChild(panel);
   }
 
+  const UNIT_OPTIONS = '<option value="time">min</option><option value="count">fois</option><option value="check">à cocher</option>';
+
   function renderEdit() {
     state.items.forEach(it => {
       const row = document.createElement("div");
       row.className = "edit-row";
-      const isT = it.type === "time";
       row.innerHTML =
         '<input type="text" id="n-' + it.id + '" aria-label="Nom de l\'activité">' +
-        (it.type === "check"
-          ? '<span class="unit">à cocher</span>'
-          : '<label class="unit"><input type="number" min="1" inputmode="numeric" id="t-' + it.id + '" aria-label="Objectif">' + (isT ? "min" : "fois") + '</label>') +
+        '<span class="unit">' +
+          '<input type="number" min="1" inputmode="numeric" id="t-' + it.id + '" aria-label="Objectif">' +
+          '<select id="u-' + it.id + '" aria-label="Unité">' + UNIT_OPTIONS + '</select>' +
+        '</span>' +
         '<button class="descbtn" type="button" aria-label="Description"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 3.5h10M2 7h10M2 10.5h6"/></svg></button>' +
         '<button class="del" type="button" aria-label="Supprimer">×</button>' +
         '<div class="edit-desc" hidden></div>';
@@ -636,8 +653,22 @@ button.opt:hover { color: var(--accent); }
       };
       n.value = it.name;
       n.oninput = () => { it.name = n.value; save(); };
-      if (t) t.value = isT ? Math.round(it.target / 60) : it.target;
-      if (t) t.oninput = () => { const v = Math.max(1, +t.value || 1); it.target = isT ? v * 60 : v; it.notified = progress(it) >= 1; save(); };
+      const u = row.querySelector("select");
+      const showNumber = () => { const c = it.type === "check"; t.style.visibility = c ? "hidden" : ""; t.disabled = c; };
+      u.value = it.type;
+      t.value = it.type === "time" ? Math.round(it.target / 60) : it.type === "count" ? it.target : "";
+      showNumber();
+      t.oninput = () => { const v = Math.max(1, +t.value || 1); it.target = it.type === "time" ? v * 60 : v; it.notified = progress(it) >= 1; save(); };
+      // Changer d'unité : on garde le nombre affiché, mais la progression du jour repart de zéro
+      // (des minutes ne se convertissent pas en répétitions).
+      u.onchange = () => {
+        const type = u.value, v = Math.max(1, +t.value || (type === "time" ? 30 : 10));
+        it.type = type;
+        it.target = type === "time" ? v * 60 : type === "check" ? 1 : v;
+        it.acc = 0; it.startedAt = null; it.notified = false;
+        t.value = type === "check" ? "" : v;
+        showNumber(); save();
+      };
       row.querySelector(".del").onclick = () => { state.items = state.items.filter(x => x.id !== it.id); save(); render(); };
       listEl.appendChild(row);
     });
@@ -646,7 +677,7 @@ button.opt:hover { color: var(--accent); }
     form.innerHTML =
       '<input name="name" id="add-name" placeholder="Nouvelle activité" required>' +
       '<input name="target" id="add-target" type="number" min="1" inputmode="numeric" placeholder="30" required aria-label="Objectif">' +
-      '<select name="type" id="add-type" aria-label="Unité"><option value="time">min</option><option value="count">fois</option><option value="check">à cocher</option></select>' +
+      '<span class="sel"><select name="type" id="add-type" aria-label="Unité">' + UNIT_OPTIONS + '</select></span>' +
       '<button class="addbtn" type="submit">Ajouter</button>';
     const tgt = form.querySelector("#add-target"), typ = form.querySelector("#add-type");
     typ.onchange = () => {
