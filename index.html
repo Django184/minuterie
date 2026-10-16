@@ -104,6 +104,21 @@ h1 { margin: 4px 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.0
 .row.done .track > span { background: var(--done); opacity: 1; }
 @keyframes pulse { 50% { opacity: .25; } }
 
+/* Activités à cocher */
+.row.check .box {
+  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--muted); flex: none;
+  display: grid; place-items: center; align-self: center; transition: background .2s, border-color .2s;
+}
+.row.check .box svg { width: 12px; height: 12px; fill: none; stroke: var(--bg); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity .2s; }
+.row.check.done .box { background: var(--done); border-color: var(--done); }
+.row.check.done .box svg { opacity: 1; }
+.row.check.done .name > span:first-child { text-decoration: line-through; text-decoration-color: var(--muted); }
+.row.check.done .name > span:first-child::after { content: none; }
+.row.check .track > span { background: var(--done); opacity: 1; }
+.row[role="checkbox"] { cursor: pointer; }
+.row[role="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.row[role="checkbox"] .line:active { opacity: .6; }
+
 /* Small text buttons: counter steps and time adjustments */
 .steps { display: flex; gap: 2px; align-items: baseline; }
 .step {
@@ -190,7 +205,7 @@ button.opt:hover { color: var(--accent); }
   .add .addbtn { justify-self: end; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .track > span, .row .track > span, .options-toggle svg, .desc-toggle svg, .switch span, .switch span::after { transition: none; }
+  .track > span, .row .track > span, .options-toggle svg, .desc-toggle svg, .row.check .box, .row.check .box svg, .switch span, .switch span::after { transition: none; }
   .row.running .name::before { animation: none; }
 }
 </style>
@@ -258,8 +273,9 @@ button.opt:hover { color: var(--accent); }
 
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
-  const elapsed = (it) => it.type === "count" ? it.acc : it.acc + (it.startedAt ? Date.now() - it.startedAt : 0);
-  const progress = (it) => it.target > 0 ? (it.type === "count" ? it.acc / it.target : elapsed(it) / (it.target * 1000)) : 0;
+  const isTime = (it) => it.type === "time";
+  const elapsed = (it) => !isTime(it) ? it.acc : it.acc + (it.startedAt ? Date.now() - it.startedAt : 0);
+  const progress = (it) => it.target > 0 ? (!isTime(it) ? it.acc / it.target : elapsed(it) / (it.target * 1000)) : 0;
 
   function fmtClock(ms) {
     const t = Math.floor(ms / 1000);
@@ -356,6 +372,19 @@ button.opt:hover { color: var(--accent); }
     if (before < it.target && it.acc >= it.target) chime();
     save(); render();
   }
+  function check(id) {
+    const it = state.items.find(x => x.id === id);
+    if (!it) return;
+    it.acc = it.acc >= 1 ? 0 : 1;
+    save();
+    const row = listEl.querySelector('[data-id="' + id + '"]');
+    if (row) {
+      row.classList.toggle("done", it.acc >= 1);
+      row.setAttribute("aria-checked", String(it.acc >= 1));
+    }
+    if (it.acc >= 1 && !showDone) setTimeout(render, 450); else render();
+  }
+
   // Ajoute ou retire des minutes au temps déjà fait, sans arrêter le minuteur.
   function adjust(id, minutes) {
     const it = state.items.find(x => x.id === id);
@@ -395,6 +424,26 @@ button.opt:hover { color: var(--accent); }
     }
 
     visible.forEach(it => {
+      if (it.type === "check") {
+        const done = it.acc >= 1;
+        const row = document.createElement("div");
+        row.className = "row check" + (done ? " done" : " idle");
+        row.dataset.id = it.id;
+        row.setAttribute("role", "checkbox");
+        row.setAttribute("aria-checked", String(done));
+        row.tabIndex = 0;
+        row.innerHTML =
+          '<div class="line">' + nameHTML(it) + '<span class="box" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.5 6.2 5 8.6l4.5-5"/></svg></span></div>' +
+          descBlock(it) +
+          '<div class="track"><span style="width:' + (done ? 100 : 0) + '%"></span></div>';
+        row.addEventListener("click", (e) => { if (!e.target.closest(".desc-toggle, .desc")) check(it.id); });
+        row.addEventListener("keydown", (e) => {
+          if (e.target === row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); check(it.id); }
+        });
+        wireDesc(row, it);
+        listEl.appendChild(row);
+        return;
+      }
       if (it.type === "count") {
         const p = progress(it), done = p >= 1;
         const row = document.createElement("div");
@@ -462,7 +511,7 @@ button.opt:hover { color: var(--accent); }
   function tick() {
     let doneMs = 0, planMs = 0, finished = 0;
     state.items.forEach(it => {
-      if (it.type === "count") { if (it.acc >= it.target) finished++; return; }
+      if (!isTime(it)) { if (it.acc >= it.target) finished++; return; }
       const el = elapsed(it), p = progress(it);
       doneMs += Math.min(el, it.target * 1000); planMs += it.target * 1000;
       if (p >= 1) finished++;
@@ -560,7 +609,9 @@ button.opt:hover { color: var(--accent); }
       const isT = it.type === "time";
       row.innerHTML =
         '<input type="text" id="n-' + it.id + '" aria-label="Nom de l\'activité">' +
-        '<label class="unit"><input type="number" min="1" inputmode="numeric" id="t-' + it.id + '" aria-label="Objectif">' + (isT ? "min" : "fois") + '</label>' +
+        (it.type === "check"
+          ? '<span class="unit">à cocher</span>'
+          : '<label class="unit"><input type="number" min="1" inputmode="numeric" id="t-' + it.id + '" aria-label="Objectif">' + (isT ? "min" : "fois") + '</label>') +
         '<button class="descbtn" type="button" aria-label="Description"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 3.5h10M2 7h10M2 10.5h6"/></svg></button>' +
         '<button class="del" type="button" aria-label="Supprimer">×</button>' +
         '<div class="edit-desc" hidden></div>';
@@ -583,9 +634,10 @@ button.opt:hover { color: var(--accent); }
         else if (!(it.desc || "").trim()) { box.hidden = true; box.innerHTML = ""; dbtn.classList.remove("on"); dbtn.setAttribute("aria-expanded", "false"); }
         else box.querySelector("textarea").focus();
       };
-      n.value = it.name; t.value = isT ? Math.round(it.target / 60) : it.target;
+      n.value = it.name;
       n.oninput = () => { it.name = n.value; save(); };
-      t.oninput = () => { const v = Math.max(1, +t.value || 1); it.target = isT ? v * 60 : v; it.notified = progress(it) >= 1; save(); };
+      if (t) t.value = isT ? Math.round(it.target / 60) : it.target;
+      if (t) t.oninput = () => { const v = Math.max(1, +t.value || 1); it.target = isT ? v * 60 : v; it.notified = progress(it) >= 1; save(); };
       row.querySelector(".del").onclick = () => { state.items = state.items.filter(x => x.id !== it.id); save(); render(); };
       listEl.appendChild(row);
     });
@@ -594,12 +646,17 @@ button.opt:hover { color: var(--accent); }
     form.innerHTML =
       '<input name="name" id="add-name" placeholder="Nouvelle activité" required>' +
       '<input name="target" id="add-target" type="number" min="1" inputmode="numeric" placeholder="30" required aria-label="Objectif">' +
-      '<select name="type" id="add-type" aria-label="Unité"><option value="time">min</option><option value="count">fois</option></select>' +
+      '<select name="type" id="add-type" aria-label="Unité"><option value="time">min</option><option value="count">fois</option><option value="check">à cocher</option></select>' +
       '<button class="addbtn" type="submit">Ajouter</button>';
+    const tgt = form.querySelector("#add-target"), typ = form.querySelector("#add-type");
+    typ.onchange = () => {
+      const c = typ.value === "check";
+      tgt.disabled = c; tgt.required = !c; tgt.style.visibility = c ? "hidden" : "";
+    };
     form.onsubmit = (e) => {
       e.preventDefault();
       const f = new FormData(form), type = f.get("type"), v = Math.max(1, +f.get("target") || 1);
-      state.items.push(fresh({ name: f.get("name").trim() || "Activité", type, target: type === "time" ? v * 60 : v }));
+      state.items.push(fresh({ name: f.get("name").trim() || "Activité", type, target: type === "time" ? v * 60 : type === "check" ? 1 : v }));
       save(); render();
     };
     listEl.appendChild(form);

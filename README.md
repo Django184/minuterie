@@ -37,6 +37,7 @@ L'écran principal reste épuré : la liste des activités, chacune avec une fin
 - **Tri des activités** (Options) : par avancement (les plus avancées en haut, puis par nom) ou par ordre alphabétique.
 - **Un seul minuteur à la fois** (Options) : en lancer un met les autres en pause.
 - **Compteurs** pour les activités qui se comptent plutôt qu'elles ne se chronomètrent, comme les pompes (−1, +1, +10).
+- **Activités à cocher** pour ce qu'on fait une seule fois dans la journée. On touche la ligne pour cocher ; l'activité quitte la liste comme les autres activités terminées. Dans « Modifier les activités », choisir « à cocher » au lieu de « min » ou « fois ».
 - **Ajuster le temps** (Options) : ajouter ou retirer 1, 5 ou 15 minutes à une activité, par exemple quand on a oublié de lancer ou d'arrêter son minuteur.
 - **Modifier les activités** (Options) : renommer, changer les objectifs, en ajouter ou en supprimer.
 - **Descriptions** : chaque activité peut avoir une description, par exemple le détail d'une séance. Dans « Modifier les activités », l'icône ≡ ouvre le champ. Dans la liste, une petite flèche à côté du nom déplie ou replie la description. Les lignes qui commencent par « - » ou « • » s'affichent en liste, et `**texte**` s'affiche en gras.
