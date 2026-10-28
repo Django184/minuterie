@@ -38,6 +38,7 @@ L'écran principal reste épuré : la liste des activités, chacune avec une fin
 - **Un seul minuteur à la fois** (Options) : en lancer un met les autres en pause.
 - **Compteurs** pour les activités qui se comptent plutôt qu'elles ne se chronomètrent, comme les pompes (−1, +1, +10).
 - **Activités à cocher** pour ce qu'on fait une seule fois dans la journée. On touche la ligne pour cocher ; l'activité quitte la liste comme les autres activités terminées. Dans « Modifier les activités », choisir « à cocher » au lieu de « min » ou « fois ».
+- **Mettre en pause aujourd'hui** (Options) : désactiver les activités qu'on ne fera pas aujourd'hui. Elles disparaissent de la liste et du résumé de la journée, puis reviennent automatiquement le lendemain. Le lien « … en pause aujourd'hui · gérer » sous la liste permet de les réactiver.
 - **Ajuster le temps** (Options) : ajouter ou retirer 1, 5 ou 15 minutes à une activité, par exemple quand on a oublié de lancer ou d'arrêter son minuteur.
 - **Modifier les activités** (Options) : renommer, changer les objectifs et l'unité (min, fois ou à cocher), en ajouter ou en supprimer. Changer l'unité remet la progression du jour de cette activité à zéro.
 - **Descriptions** : chaque activité peut avoir une description, par exemple le détail d'une séance. Dans « Modifier les activités », l'icône ≡ ouvre le champ. Dans la liste, une petite flèche à côté du nom déplie ou replie la description. Les lignes qui commencent par « - » ou « • » s'affichent en liste, et `**texte**` s'affiche en gras.

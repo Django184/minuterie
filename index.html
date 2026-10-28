@@ -119,6 +119,13 @@ h1 { margin: 4px 0 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.0
 .row[role="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 .row[role="checkbox"] .line:active { opacity: .6; }
 
+/* Écran « Mettre en pause aujourd'hui » */
+.skiprow { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; border-bottom: 1px solid var(--faint); cursor: pointer; }
+.skiprow .right { display: flex; align-items: center; gap: 12px; }
+.skiprow .state { font-size: 0.82rem; color: var(--accent); }
+.skiprow.off .name { color: var(--muted); }
+.more + .more { margin-top: 0; }
+
 /* Small text buttons: counter steps and time adjustments */
 .steps { display: flex; gap: 2px; align-items: baseline; }
 .step {
@@ -280,6 +287,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   let state = load();
   let editing = false;
   let adjusting = false;
+  let skipping = false;   // écran « Mettre en pause aujourd'hui »
   let showDone = false;
   let optionsOpen = false;
   let confirmReset = false;
@@ -425,16 +433,20 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     listEl.innerHTML = "";
     renderMode();
     if (editing) { renderEdit(); renderFooter(); return; }
+    if (skipping) { renderSkip(); tick(); renderFooter(); return; }
 
     // Les activités terminées sont masquées, sauf si un minuteur tourne encore ou si on les affiche.
-    const all = sorted();
+    const all = sorted().filter(x => !x.skip);
+    const skipCount = state.items.length - all.length;
     const doneCount = all.filter(x => progress(x) >= 1 && !x.startedAt).length;
     const visible = all.filter(x => showDone || progress(x) < 1 || x.startedAt);
 
     if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "empty";
-      empty.innerHTML = "<b>Tout est fait pour aujourd'hui.</b><span>Toutes vos activités ont atteint leur objectif.</span>";
+      empty.innerHTML = all.length
+        ? "<b>Tout est fait pour aujourd'hui.</b><span>Toutes vos activités ont atteint leur objectif.</span>"
+        : "<b>Rien de prévu aujourd'hui.</b><span>Toutes vos activités sont en pause. Elles reviendront demain.</span>";
       listEl.appendChild(empty);
     }
 
@@ -519,13 +531,22 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
       t.onclick = () => { showDone = !showDone; render(); };
       listEl.appendChild(t);
     }
+    if (skipCount && !adjusting) {
+      const t = document.createElement("button");
+      t.type = "button"; t.className = "more"; t.id = "skip-link";
+      t.textContent = (skipCount === 1 ? "1 activité en pause aujourd'hui" : skipCount + " activités en pause aujourd'hui") + " · gérer";
+      t.onclick = () => { skipping = true; render(); window.scrollTo({ top: 0 }); };
+      if (doneCount) t.style.marginTop = "0";
+      listEl.appendChild(t);
+    }
     tick();
     renderFooter();
   }
 
   function tick() {
     let doneMs = 0, planMs = 0, finished = 0;
-    state.items.forEach(it => {
+    const active = state.items.filter(x => !x.skip);
+    active.forEach(it => {
       if (!isTime(it)) { if (it.acc >= it.target) finished++; return; }
       const el = elapsed(it), p = progress(it);
       doneMs += Math.min(el, it.target * 1000); planMs += it.target * 1000;
@@ -550,7 +571,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     });
     document.getElementById("sumDone").textContent = fmtTotal(doneMs);
     document.getElementById("sumPlan").textContent = fmtTotal(planMs);
-    document.getElementById("sumCount").textContent = finished + "/" + state.items.length;
+    document.getElementById("sumCount").textContent = finished + "/" + active.length;
     document.getElementById("sumBar").style.width = (planMs ? Math.min(100, doneMs / planMs * 100) : 0) + "%";
     const r = state.items.find(x => x.startedAt);
     document.title = r ? fmtClock(elapsed(r)) + " · " + r.name : "Ma journée";
@@ -558,21 +579,23 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
   // Bandeau des modes « Ajuster le temps » et « Modifier les activités ».
   function renderMode() {
-    modeEl.hidden = !(adjusting || editing);
+    modeEl.hidden = !(adjusting || editing || skipping);
     if (modeEl.hidden) return;
     modeEl.innerHTML = '<p></p><button class="pill" type="button" id="mode-done">Terminé</button>';
-    modeEl.querySelector("p").textContent = adjusting
+    modeEl.querySelector("p").textContent = skipping
+      ? "Désactivez les activités à mettre de côté aujourd'hui. Elles reviennent automatiquement demain."
+      : adjusting
       ? "Ajoutez ou retirez des minutes, par exemple si vous avez oublié de lancer ou d'arrêter un minuteur."
       : "Renommez, changez les objectifs, ajoutez ou supprimez des activités. L'icône ≡ ajoute une description.";
     modeEl.querySelector("button").onclick = () => {
       if (editing) state.items = state.items.filter(x => x.name.trim());
-      editing = false; adjusting = false; save(); render();
+      editing = false; adjusting = false; skipping = false; save(); render();
     };
   }
 
   function renderFooter() {
     footEl.innerHTML = "";
-    if (editing || adjusting) return;
+    if (editing || adjusting || skipping) return;
     const tgl = document.createElement("button");
     tgl.type = "button"; tgl.className = "options-toggle"; tgl.id = "options-toggle";
     tgl.setAttribute("aria-expanded", optionsOpen ? "true" : "false");
@@ -591,12 +614,14 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
       '<div class="opt"><label for="single">Un seul minuteur à la fois</label>' +
         '<span class="switch"><input type="checkbox" id="single" role="switch"><span></span></span></div>' +
       '<button type="button" class="opt" id="opt-adjust"><span>Ajuster le temps</span><span class="chev">›</span></button>' +
+      '<button type="button" class="opt" id="opt-skip"><span>Mettre en pause aujourd\'hui</span><span class="chev">' +
+        (state.items.some(x => x.skip) ? state.items.filter(x => x.skip).length + ' ›' : '›') + '</span></button>' +
       '<button type="button" class="opt" id="opt-edit"><span>Modifier les activités</span><span class="chev">›</span></button>' +
       (running ? '<button type="button" class="opt" id="opt-pause"><span>Tout mettre en pause</span></button>' : '') +
       (confirmReset
         ? '<div class="opt"><span>Tout remettre à zéro ?</span><span class="confirm"><button type="button" class="no" id="reset-no">Annuler</button><button type="button" class="yes" id="reset-yes">Remettre à zéro</button></span></div>'
         : '<button type="button" class="opt danger" id="opt-reset"><span>Remettre à zéro</span></button>') +
-      '<p class="hint">Touchez une activité pour lancer ou mettre en pause son minuteur. Une activité disparaît quand elle atteint son objectif. Tout repart à zéro chaque nouveau jour.</p>';
+      '<p class="hint">Touchez une activité pour lancer ou mettre en pause son minuteur. Une activité disparaît quand elle atteint son objectif. Tout repart à zéro chaque nouveau jour, et les activités mises en pause reviennent.</p>';
 
     panel.querySelectorAll(".seg button").forEach(b => {
       b.setAttribute("aria-pressed", b.dataset.sort === state.sort ? "true" : "false");
@@ -606,15 +631,39 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
     single.checked = state.single;
     single.onchange = () => { state.single = single.checked; save(); };
     panel.querySelector("#opt-adjust").onclick = () => { adjusting = true; optionsOpen = false; render(); window.scrollTo({ top: 0 }); };
+    panel.querySelector("#opt-skip").onclick = () => { skipping = true; optionsOpen = false; render(); window.scrollTo({ top: 0 }); };
     panel.querySelector("#opt-edit").onclick = () => { editing = true; optionsOpen = false; render(); window.scrollTo({ top: 0 }); };
     if (running) panel.querySelector("#opt-pause").onclick = () => { pauseAll(); save(); render(); };
     if (confirmReset) {
       panel.querySelector("#reset-no").onclick = () => { confirmReset = false; renderFooter(); };
-      panel.querySelector("#reset-yes").onclick = () => { state.items = state.items.map(fresh); confirmReset = false; showDone = false; save(); render(); };
+      panel.querySelector("#reset-yes").onclick = () => { state.items = state.items.map(it => Object.assign(fresh(it), it.skip ? { skip: true } : {})); confirmReset = false; showDone = false; save(); render(); };
     } else {
       panel.querySelector("#opt-reset").onclick = () => { confirmReset = true; renderFooter(); };
     }
     footEl.appendChild(panel);
+  }
+
+  // Liste de toutes les activités avec un interrupteur : désactivé = en pause aujourd'hui.
+  function renderSkip() {
+    state.items.slice().sort(byName).forEach(it => {
+      const row = document.createElement("label");
+      row.className = "skiprow" + (it.skip ? " off" : "");
+      row.innerHTML =
+        '<span class="name"><span>' + esc(it.name) + '</span></span>' +
+        '<span class="right"><span class="state">' + (it.skip ? "en pause" : "") + '</span>' +
+        '<span class="switch"><input type="checkbox" role="switch" id="s-' + it.id + '"><span></span></span></span>';
+      const cb = row.querySelector("input");
+      cb.checked = !it.skip;
+      cb.setAttribute("aria-label", it.name + " aujourd'hui");
+      cb.onchange = () => {
+        it.skip = !cb.checked;
+        if (it.skip && it.startedAt) { it.acc += Date.now() - it.startedAt; it.startedAt = null; }
+        row.classList.toggle("off", it.skip);
+        row.querySelector(".state").textContent = it.skip ? "en pause" : "";
+        save(); tick();
+      };
+      listEl.appendChild(row);
+    });
   }
 
   const UNIT_OPTIONS = '<option value="time">min</option><option value="count">fois</option><option value="check">à cocher</option>';
