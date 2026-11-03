@@ -52,7 +52,7 @@ jobs:
           # Nom du cache du service worker = empreinte du commit (D-005 : jamais incrémenté à la main)
           sed -i "s/__VERSION__/${GITHUB_SHA::12}/" _site/sw.js
           grep -q "${GITHUB_SHA::12}" _site/sw.js
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deployment
