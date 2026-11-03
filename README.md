@@ -46,6 +46,7 @@ L'écran principal reste épuré : la liste des activités, chacune avec une fin
 - **Remise à zéro automatique** chaque nouveau jour, ou à la main avec « Remettre à zéro ».
 - **Hors ligne** : une fois installée, l'application fonctionne sans connexion.
 - **Thème clair ou sombre**, selon le réglage du téléphone.
+- **Exporter et importer** (Options) : enregistrer ses activités dans un fichier, et les retrouver sur un autre appareil ou après avoir effacé les données du navigateur.
 
 Le temps reste juste même si l'application est fermée ou si l'écran se verrouille, car il est calculé à partir de l'heure de départ. Le son de fin ne retentit que si l'application est ouverte à ce moment-là.
 
@@ -59,19 +60,33 @@ Le temps reste juste même si l'application est fermée ou si l'écran se verrou
 1. Ouvrir https://django184.github.io/minuterie/ dans Safari.
 2. Toucher Partager, puis « Sur l'écran d'accueil ».
 
-L'application apparaît alors avec son icône et s'ouvre en plein écran. Elle se met à jour toute seule la prochaine fois qu'on l'ouvre avec une connexion.
+L'application apparaît alors avec son icône et s'ouvre en plein écran. Quand une nouvelle version est publiée, un bandeau « Une nouvelle version est disponible » propose de recharger ; rien ne change tant qu'on ne l'a pas touché.
 
 ## Données
 
-Tout est enregistré sur le téléphone, dans le stockage du navigateur. Rien n'est envoyé ailleurs. Les données ne passent donc pas d'un appareil à l'autre.
+Tout est enregistré sur le téléphone, dans le stockage du navigateur. Rien n'est envoyé ailleurs, et l'app ne contacte aucun autre site (polices comprises). Pour garder une copie ou changer d'appareil : Options → Exporter mes données, puis Importer des données sur l'autre appareil.
+
+Les données portent un numéro de version de schéma (`schemaVersion`). Avant toute migration, l'app garde une copie brute des anciennes données dans le stockage du navigateur.
+
+## Licence
+
+Code sous licence MIT (`LICENSE`). Polices IBM Plex sous licence SIL Open Font License 1.1 (`fonts/OFL.txt`).
 
 ## Fichiers
 
 | Fichier | Rôle |
 |---------|------|
-| `index.html` | L'application entière (page, styles et code) |
+| `index.html` | La page (structure seulement, avec sa politique de sécurité) |
+| `css/socle.css` | Tokens communs de l'écosystème (à ne pas modifier ici) |
+| `css/app.css` | Styles et identité de l'application |
+| `js/app.js` | Le code de l'application |
+| `fonts/` | IBM Plex Sans et Mono (licence OFL, `fonts/OFL.txt`) |
 | `manifest.webmanifest` | Nom, icônes et couleurs pour l'installation |
-| `sw.js` | Garde l'application disponible hors ligne |
+| `sw.js` | Garde l'application disponible hors ligne et propose les mises à jour |
 | `icon-*.png`, `apple-touch-icon.png` | Icônes de l'application |
+| `tests/e2e.mjs` | Tests de bout en bout (Playwright) |
+| `CHANGELOG.md` | Historique des versions |
 
-Le site est publié avec GitHub Pages depuis la branche `main`, à la racine du dépôt. Aucune étape de construction n'est nécessaire.
+Le site est publié avec GitHub Pages depuis la branche `main`. Aucune étape de construction n'est nécessaire : la CI lance les tests (`node tests/e2e.mjs`), puis publie les fichiers en remplaçant `__VERSION__` dans `sw.js` par l'empreinte du commit.
+
+Pour publier une nouvelle version : changer `APP_VERSION` dans `js/app.js`, ajouter une entrée à `CHANGELOG.md`, pousser sur `main`.

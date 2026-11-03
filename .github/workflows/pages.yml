@@ -1,24 +1,43 @@
-# Publie l'application sur GitHub Pages à chaque push sur main.
+# Teste puis publie l'application sur GitHub Pages à chaque push sur main.
 # (Settings → Pages → Source : « GitHub Actions »)
+# La publication n'a lieu que si les tests de bout en bout passent.
 name: Publier sur GitHub Pages
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
+  tests:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Installer Playwright (Chromium)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Tests de bout en bout (migration, export/import, CSP, hors ligne, mise à jour)
+        run: node tests/e2e.mjs
+
+  deploy:
+    needs: tests
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -29,6 +48,10 @@ jobs:
         run: |
           mkdir _site
           cp index.html manifest.webmanifest sw.js *.png _site/
+          cp -r css js fonts _site/
+          # Nom du cache du service worker = empreinte du commit (D-005 : jamais incrémenté à la main)
+          sed -i "s/__VERSION__/${GITHUB_SHA::12}/" _site/sw.js
+          grep -q "${GITHUB_SHA::12}" _site/sw.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
