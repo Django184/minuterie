@@ -1,0 +1,163 @@
+# Tests à chaque envoi sur main, puis publication sur Cloudflare Pages (projet « ma-journee »,
+# https://ma-journee.pages.dev), puis vérification du site publié. Chantier B, D-004 et D-013.
+# L'ancienne adresse (https://django184.github.io/minuterie/) n'est plus publiée par ce workflow :
+# elle garde sa dernière version jusqu'au passage au passeur (workflow « Passeur de l'ancienne adresse »).
+name: Tests et publication
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publication-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PROJET: ma-journee
+  SITE: https://ma-journee.pages.dev/
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Installer Playwright (Chromium)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Tests de bout en bout (migration, export/import, CSP, hors ligne, mise à jour)
+        run: node tests/e2e.mjs
+      - name: Changement d'adresse (passeur, service worker d'autodestruction, reprise)
+        run: node tests/demenagement.mjs
+
+  publication:
+    needs: tests
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      publie: ${{ steps.deploy.outcome }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Secrets absents
+        if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''
+        run: |
+          echo "::warning::Publication NON faite : secrets Cloudflare absents (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID)."
+          {
+            echo "## ⚠️ Publication non faite"
+            echo "Les secrets \`CLOUDFLARE_API_TOKEN\` et \`CLOUDFLARE_ACCOUNT_ID\` sont introuvables"
+            echo "(Settings → Secrets and variables → Actions → Repository secrets)."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Projet Cloudflare Pages (créé s'il n'existe pas, adresse vérifiée)
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects"
+          auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+          code=$(curl -sS -o projet.json -w '%{http_code}' -H "$auth" "$api/$PROJET")
+          if [ "$code" = 404 ]; then
+            echo "Projet $PROJET absent : création."
+            code=$(curl -sS -o projet.json -w '%{http_code}' -X POST -H "$auth" -H 'Content-Type: application/json' \
+              --data "{\"name\":\"$PROJET\",\"production_branch\":\"main\"}" "$api")
+          fi
+          if [ "$code" != 200 ]; then
+            echo "::error::API Cloudflare ($code) : $(jq -c '.errors' projet.json)"; exit 1
+          fi
+          sous_domaine=$(jq -r '.result.subdomain' projet.json)
+          branche=$(jq -r '.result.production_branch' projet.json)
+          echo "Projet $PROJET : $sous_domaine (branche de production : $branche)"
+          if [ "https://$sous_domaine/" != "$SITE" ]; then
+            echo "::error::Cloudflare a attribué https://$sous_domaine/ au lieu de $SITE : mettre à jour l'adresse (workflow, passeur, fiche)."; exit 1
+          fi
+          if [ "$branche" != main ]; then
+            echo "::error::Branche de production « $branche » au lieu de « main »."; exit 1
+          fi
+      - name: Fichiers du site
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: |
+          mkdir _site
+          cp index.html manifest.webmanifest sw.js _headers *.png _site/
+          cp -r css js fonts _site/
+          # Nom du cache du service worker = empreinte du commit (D-005 : jamais incrémenté à la main)
+          sed -i "s/__VERSION__/${GITHUB_SHA::12}/" _site/sw.js
+          grep -q "${GITHUB_SHA::12}" _site/sw.js
+      - name: Publication sur Cloudflare Pages
+        id: deploy
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=ma-journee --branch=main --commit-dirty=true
+      - name: Résumé
+        if: steps.deploy.outcome == 'success'
+        run: echo "## ✅ Publiée sur $SITE ($(grep -m1 'APP_VERSION =' js/app.js | cut -d'"' -f2)+${GITHUB_SHA::7})" >> "$GITHUB_STEP_SUMMARY"
+
+  # Le site réellement publié : bonne version servie, en-têtes, manifeste, déménagement, hors ligne.
+  en_ligne:
+    needs: publication
+    if: needs.publication.outputs.publie == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Installer Playwright (Chromium)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Attendre la nouvelle version en ligne
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "${SITE}sw.js?ci=${GITHUB_RUN_ID}-$i" | grep -q "${GITHUB_SHA::12}"; then
+              echo "En ligne : ${GITHUB_SHA::12}"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Le site ne sert pas ${GITHUB_SHA::12} après 5 minutes"
+          exit 1
+      - name: Site publié (en-têtes, manifeste, version, déménagement, hors ligne)
+        run: node tests/en_ligne.mjs "$SITE"
+      - name: Résumé
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = success ]; then
+            echo "## ✅ Site publié vérifié : en-têtes, manifeste, version, déménagement et hors ligne" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## ❌ Site publié : vérification en échec (voir le journal de ce job)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # Résultat lisible par git même si le dépôt devient privé (D-011) : branche ci-statut, statut.json.
+  statut:
+    needs: [tests, publication, en_ligne]
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Écrire statut.json sur la branche ci-statut
+        env:
+          TESTS: ${{ needs.tests.result }}
+          PUBLICATION: ${{ needs.publication.result }}
+          PUBLIE: ${{ needs.publication.outputs.publie }}
+          EN_LIGNE: ${{ needs.en_ligne.result }}
+          TOKEN: ${{ github.token }}
+        run: |
+          mkdir statut && cd statut && git init -q -b ci-statut
+          printf '{"commit":"%s","tests":"%s","publication":"%s","publie":"%s","en_ligne":"%s","date":"%s","run":"%s/%s/actions/runs/%s"}\n' \
+            "$GITHUB_SHA" "$TESTS" "$PUBLICATION" "${PUBLIE:-skipped}" "${EN_LIGNE:-skipped}" "$(date -u +%FT%TZ)" \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > statut.json
+          cat statut.json
+          git add statut.json
+          git -c user.name="CI" -c user.email="ci@users.noreply.github.com" commit -qm "CI ${GITHUB_SHA::7} : tests $TESTS, publication $PUBLICATION, en ligne ${EN_LIGNE:-skipped}"
+          git push -qf "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-statut

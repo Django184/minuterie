@@ -1,0 +1,10 @@
+# En-têtes HTTP servis par Cloudflare Pages (ECOSYSTEME.md §8.3).
+# La CSP reprend celle de la balise <meta> d'index.html, plus frame-ancestors (sans effet en <meta>).
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+/sw.js
+  Cache-Control: no-cache

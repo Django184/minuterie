@@ -6,7 +6,7 @@
 
 <p align="center">
   Un minuteur par activité pour suivre sa journée type, d'un simple toucher.<br>
-  <a href="https://django184.github.io/minuterie/"><b>Ouvrir l'application →</b></a>
+  <a href="https://ma-journee.pages.dev/"><b>Ouvrir l'application →</b></a>
 </p>
 
 ---
@@ -53,14 +53,16 @@ Le temps reste juste même si l'application est fermée ou si l'écran se verrou
 ## Installer sur le téléphone
 
 **Android (Chrome)**
-1. Ouvrir https://django184.github.io/minuterie/ dans Chrome.
+1. Ouvrir https://ma-journee.pages.dev/ dans Chrome.
 2. Toucher le bandeau « Installer l'application », ou le menu ⋮ puis « Installer l'application ».
 
 **iPhone (Safari)**
-1. Ouvrir https://django184.github.io/minuterie/ dans Safari.
+1. Ouvrir https://ma-journee.pages.dev/ dans Safari.
 2. Toucher Partager, puis « Sur l'écran d'accueil ».
 
 L'application apparaît alors avec son icône et s'ouvre en plein écran. Quand une nouvelle version est publiée, un bandeau « Une nouvelle version est disponible » propose de recharger ; rien ne change tant qu'on ne l'a pas touché.
+
+**Venir de l'ancienne adresse** (`django184.github.io/minuterie/`) : ouvrir l'ancienne app une fois avec du réseau. Elle passe la main à la nouvelle adresse, qui propose de reprendre les activités (« Reprendre »). Installer ensuite l'app depuis la nouvelle adresse et supprimer l'ancienne icône. En cas de souci : exporter depuis l'ancienne app, importer dans la nouvelle.
 
 ## Données
 
@@ -84,9 +86,13 @@ Code sous licence MIT (`LICENSE`). Polices IBM Plex sous licence SIL Open Font L
 | `manifest.webmanifest` | Nom, icônes et couleurs pour l'installation |
 | `sw.js` | Garde l'application disponible hors ligne et propose les mises à jour |
 | `icon-*.png`, `apple-touch-icon.png` | Icônes de l'application |
+| `_headers` | En-têtes HTTP servis par Cloudflare Pages (CSP, etc.) |
+| `passeur/` | Page laissée à l'ancienne adresse : transmet les données et désinstalle l'ancienne app |
 | `tests/e2e.mjs` | Tests de bout en bout (Playwright) |
+| `tests/demenagement.mjs` | Changement d'adresse de bout en bout |
+| `tests/en_ligne.mjs` | Vérification du site publié |
 | `CHANGELOG.md` | Historique des versions |
 
-Le site est publié avec GitHub Pages depuis la branche `main`. Aucune étape de construction n'est nécessaire : la CI lance les tests (`node tests/e2e.mjs`), puis publie les fichiers en remplaçant `__VERSION__` dans `sw.js` par l'empreinte du commit.
+Le site est publié sur Cloudflare Pages (projet `ma-journee`) depuis la branche `main`. Aucune étape de construction n'est nécessaire : la CI lance les tests, publie les fichiers en remplaçant `__VERSION__` dans `sw.js` par l'empreinte du commit, puis vérifie le site publié. Son résultat est lisible sur la branche `ci-statut` (`statut.json`). Secrets nécessaires : `CLOUDFLARE_API_TOKEN` (Cloudflare Pages · Edit) et `CLOUDFLARE_ACCOUNT_ID`.
 
 Pour publier une nouvelle version : changer `APP_VERSION` dans `js/app.js`, ajouter une entrée à `CHANGELOG.md`, pousser sur `main`.

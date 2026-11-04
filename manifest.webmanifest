@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "Ma journée",
   "short_name": "Ma journée",
   "description": "Un minuteur par activité de la journée.",

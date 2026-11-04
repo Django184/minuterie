@@ -2,6 +2,22 @@
 
 Toutes les évolutions notables de Ma journée. Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnement sémantique.
 
+## [1.1.0] - 2026-11-04
+
+Nouvelle adresse : **https://ma-journee.pages.dev** (Cloudflare Pages). L'ancienne adresse garde la version 1.0.0 jusqu'à son remplacement par une page de passage.
+
+### Ajouté
+- Reprise des activités venues de l'ancienne adresse : un lien `#/demenagement/…` ouvre les options sur « Reprendre les N activités de l'ancienne adresse ? ». Rien n'est écrit sans confirmation.
+- Passeur de l'ancienne adresse (`passeur/`, publié à la main par le workflow « Passeur de l'ancienne adresse ») : il transmet les activités de l'appareil à la nouvelle adresse et désinstalle l'ancienne app (son service worker efface ses caches et se désinscrit). Les données de l'ancienne adresse ne sont pas effacées.
+- Identifiant du manifeste (`id`), posé avec le changement d'adresse.
+- Tests : changement d'adresse de bout en bout (`tests/demenagement.mjs`) et vérification du site publié (`tests/en_ligne.mjs`).
+
+### Modifié
+- Publication sur Cloudflare Pages au lieu de GitHub Pages ; la CI vérifie ensuite le site publié (version servie, en-têtes, manifeste, déménagement, hors ligne) et écrit son résultat sur la branche `ci-statut`.
+
+### Sécurité
+- Vrais en-têtes HTTP (`_headers`) : CSP avec `frame-ancestors 'none'`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
+
 ## [1.0.0] - 2026-11-03
 
 Première version numérotée, alignée sur le socle de l'écosystème.

@@ -1,6 +1,6 @@
 // Ma journée — script de l'app (aucune dépendance, aucun module, aucune étape de build).
 (function () {
-  const APP_VERSION = "1.0.0";
+  const APP_VERSION = "1.1.0";
   const KEY = "journee-timers-v1";          // nom historique de la clé, conservé tel quel
   const SCHEMA = 2;                          // version du schéma des données enregistrées
   const BACKUP_V1 = KEY + ".avant-v2";       // copie brute faite avant la migration 1 → 2
@@ -500,7 +500,10 @@
     panel.querySelector("#opt-export").onclick = exportData;
     if (pendingImport) {
       const m = pendingImport.state.items.length;
-      panel.querySelector("#import-q").textContent = "Remplacer vos " + n + " activité" + (n > 1 ? "s" : "") + " par les " + m + " du fichier ?";
+      panel.querySelector("#import-q").textContent = pendingImport.from === "demenagement"
+        ? "Reprendre les " + m + " activité" + (m > 1 ? "s" : "") + " de l'ancienne adresse à la place des " + n + " affichées ?"
+        : "Remplacer vos " + n + " activité" + (n > 1 ? "s" : "") + " par les " + m + " du fichier ?";
+      if (pendingImport.from === "demenagement") panel.querySelector("#import-yes").textContent = "Reprendre";
       panel.querySelector("#import-no").onclick = () => { pendingImport = null; renderFooter(); };
       panel.querySelector("#import-yes").onclick = () => {
         state = pendingImport.state; pendingImport = null; showDone = false;
@@ -621,10 +624,31 @@
     listEl.appendChild(form);
   }
 
+  // ----- Déménagement depuis l'ancienne adresse (ECOSYSTEME.md §7.4, chantier B) -----
+  // La page laissée à l'ancienne adresse lit les données de l'appareil et ouvre
+  // #/demenagement/<export en base64url> ici. Rien n'est écrit sans confirmation.
+  function fromBase64url(text) {
+    const bin = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
+    return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+  }
+  const moveMatch = location.hash.match(/^#\/demenagement\/([A-Za-z0-9_-]+)$/);
+  if (moveMatch) {
+    history.replaceState(null, "", location.pathname + location.search);   // le lien ne resservira pas
+    optionsOpen = true;
+    try {
+      pendingImport = Object.assign(parseImport(fromBase64url(moveMatch[1])), { from: "demenagement" });
+      notice = { text: "Ma journée a changé d'adresse. Vos activités sont prêtes à être reprises." };
+    } catch (err) {
+      notice = { text: "Reprise de l'ancienne adresse impossible : " + err.message + " Utilisez l'export de l'ancienne adresse.", err: true };
+    }
+    announce(notice.text);
+  }
+
   document.getElementById("date").textContent = new Date().toLocaleDateString("fr-CH", { weekday: "long", day: "numeric", month: "long" });
 
   save();   // enregistre la version de schéma dès le premier chargement
   render();
+  if (moveMatch) { const b = document.getElementById(pendingImport ? "import-yes" : "notice"); if (b) { b.scrollIntoView({ block: "center" }); if (pendingImport) b.focus(); } }
   setInterval(() => {
     if (state.date !== today()) { state = load(); save(); render(); return; }
     if (!editing) tick();
