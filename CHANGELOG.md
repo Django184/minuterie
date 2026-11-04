@@ -4,7 +4,7 @@ Toutes les évolutions notables de Ma journée. Format : [Keep a Changelog](http
 
 ## [1.1.0] - 2026-11-04
 
-Nouvelle adresse : **https://ma-journee.pages.dev** (Cloudflare Pages). L'ancienne adresse garde la version 1.0.0 jusqu'à son remplacement par une page de passage.
+Nouvelle adresse : **https://ma-journee-2q9.pages.dev** (Cloudflare Pages ; `ma-journee.pages.dev` était déjà pris, Cloudflare a ajouté le suffixe). L'ancienne adresse garde la version 1.0.0 jusqu'à son remplacement par une page de passage.
 
 ### Ajouté
 - Reprise des activités venues de l'ancienne adresse : un lien `#/demenagement/…` ouvre les options sur « Reprendre les N activités de l'ancienne adresse ? ». Rien n'est écrit sans confirmation.

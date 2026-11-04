@@ -1,5 +1,5 @@
 # Remplace l'ancienne adresse (https://django184.github.io/minuterie/) par le passeur :
-# page qui transmet les données de l'appareil à https://ma-journee.pages.dev et service worker
+# page qui transmet les données de l'appareil à https://ma-journee-2q9.pages.dev et service worker
 # qui désinstalle l'ancienne app (ECOSYSTEME.md §7.4, chantier B, étape 3).
 # Lancement manuel uniquement, après vérification de la nouvelle adresse sur le téléphone.
 # Settings → Pages → Source : « GitHub Actions » (déjà le cas).
@@ -49,4 +49,4 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v5
       - name: Résumé
-        run: echo "## ✅ Ancienne adresse remplacée par le passeur vers https://ma-journee.pages.dev/" >> "$GITHUB_STEP_SUMMARY"
+        run: echo "## ✅ Ancienne adresse remplacée par le passeur vers https://ma-journee-2q9.pages.dev/" >> "$GITHUB_STEP_SUMMARY"

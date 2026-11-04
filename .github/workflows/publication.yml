@@ -1,5 +1,5 @@
 # Tests à chaque envoi sur main, puis publication sur Cloudflare Pages (projet « ma-journee »,
-# https://ma-journee.pages.dev), puis vérification du site publié. Chantier B, D-004 et D-013.
+# https://ma-journee-2q9.pages.dev), puis vérification du site publié. Chantier B, D-004 et D-013.
 # L'ancienne adresse (https://django184.github.io/minuterie/) n'est plus publiée par ce workflow :
 # elle garde sa dernière version jusqu'au passage au passeur (workflow « Passeur de l'ancienne adresse »).
 name: Tests et publication
@@ -19,7 +19,7 @@ concurrency:
 
 env:
   PROJET: ma-journee
-  SITE: https://ma-journee.pages.dev/
+  SITE: https://ma-journee-2q9.pages.dev/
 
 jobs:
   tests:

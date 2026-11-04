@@ -1,10 +1,10 @@
-// Vérification du site publié (job « en_ligne » de la CI) : node tests/en_ligne.mjs https://ma-journee.pages.dev/
+// Vérification du site publié (job « en_ligne » de la CI) : node tests/en_ligne.mjs https://ma-journee-2q9.pages.dev/
 // En-têtes HTTP, manifeste, version affichée, lien de déménagement, puis rechargement hors ligne.
 // Aucun contournement de la CSP : toute violation est une erreur.
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
-const SITE = process.argv[2] || "https://ma-journee.pages.dev/";
+const SITE = process.argv[2] || "https://ma-journee-2q9.pages.dev/";
 const VERSION = (await readFile(new URL("../js/app.js", import.meta.url), "utf8")).match(/APP_VERSION = "([^"]+)"/)[1];
 
 let echecs = 0;

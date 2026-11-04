@@ -4,7 +4,7 @@
 //      prend la place de l'ancien, efface ses caches, se désinscrit et recharge la fenêtre ;
 //   3. le passeur transmet les données à la nouvelle adresse (#/demenagement/…) ;
 //   4. la nouvelle adresse demande confirmation, puis reprend les activités.
-// Deux serveurs sur deux ports = deux origines, comme django184.github.io et ma-journee.pages.dev.
+// Deux serveurs sur deux ports = deux origines, comme django184.github.io et ma-journee-2q9.pages.dev.
 // Lancer : node tests/demenagement.mjs   (playwright doit être installé : npm i --no-save playwright)
 import http from "node:http";
 import { readFile } from "node:fs/promises";
@@ -29,7 +29,7 @@ function serveur(prefixe, dossier) {
       let corps = await readFile(join(base, p));
       if (p === "sw.js") corps = Buffer.from(corps.toString().replace("__VERSION__", "test"));
       if (p === "index.html" && base.endsWith("passeur")) {
-        corps = Buffer.from(corps.toString().replaceAll("https://ma-journee.pages.dev/", nouvelle));
+        corps = Buffer.from(corps.toString().replaceAll("https://ma-journee-2q9.pages.dev/", nouvelle));
       }
       res.writeHead(200, { "Content-Type": TYPES[extname(p)] || "application/octet-stream", "Cache-Control": "no-cache" });
       res.end(corps);

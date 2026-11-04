@@ -6,7 +6,7 @@
 
 <p align="center">
   Un minuteur par activité pour suivre sa journée type, d'un simple toucher.<br>
-  <a href="https://ma-journee.pages.dev/"><b>Ouvrir l'application →</b></a>
+  <a href="https://ma-journee-2q9.pages.dev/"><b>Ouvrir l'application →</b></a>
 </p>
 
 ---
@@ -53,11 +53,11 @@ Le temps reste juste même si l'application est fermée ou si l'écran se verrou
 ## Installer sur le téléphone
 
 **Android (Chrome)**
-1. Ouvrir https://ma-journee.pages.dev/ dans Chrome.
+1. Ouvrir https://ma-journee-2q9.pages.dev/ dans Chrome.
 2. Toucher le bandeau « Installer l'application », ou le menu ⋮ puis « Installer l'application ».
 
 **iPhone (Safari)**
-1. Ouvrir https://ma-journee.pages.dev/ dans Safari.
+1. Ouvrir https://ma-journee-2q9.pages.dev/ dans Safari.
 2. Toucher Partager, puis « Sur l'écran d'accueil ».
 
 L'application apparaît alors avec son icône et s'ouvre en plein écran. Quand une nouvelle version est publiée, un bandeau « Une nouvelle version est disponible » propose de recharger ; rien ne change tant qu'on ne l'a pas touché.
