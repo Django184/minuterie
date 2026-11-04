@@ -8,7 +8,8 @@ const SITE = process.argv[2] || "https://ma-journee-2q9.pages.dev/";
 const VERSION = (await readFile(new URL("../js/app.js", import.meta.url), "utf8")).match(/APP_VERSION = "([^"]+)"/)[1];
 
 let echecs = 0;
-const ok = (cond, msg) => { console.log((cond ? "✓ " : "✗ ") + msg); if (!cond) echecs++; };
+// Les échecs sortent aussi en annotations, lisibles par l'API GitHub (les journaux ne le sont pas toujours).
+const ok = (cond, msg) => { console.log((cond ? "✓ " : "✗ ") + msg); if (!cond) { echecs++; console.log("::error::Site publié : " + msg); } };
 const base64url = (t) => Buffer.from(t, "utf8").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
 const navigateur = await chromium.launch();

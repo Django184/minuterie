@@ -2,8 +2,10 @@
 // VERSION est remplacée au déploiement par l'empreinte du commit (voir .github/workflows/pages.yml).
 const VERSION = "__VERSION__";
 const CACHE = "ma-journee-" + VERSION;
+// La page est précachée sous « ./ » seulement : Cloudflare Pages redirige « index.html » vers « / »,
+// et une réponse redirigée servie à une navigation est refusée par le navigateur.
 const FILES = [
-  "./", "index.html", "manifest.webmanifest",
+  "./", "manifest.webmanifest",
   "css/socle.css", "css/app.css", "js/app.js",
   "fonts/IBMPlexSans-Regular-Latin1.woff2", "fonts/IBMPlexSans-Medium-Latin1.woff2", "fonts/IBMPlexSans-SemiBold-Latin1.woff2",
   "fonts/IBMPlexMono-Regular-Latin1.woff2", "fonts/IBMPlexMono-Medium-Latin1.woff2",
@@ -34,7 +36,7 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
   if (e.request.mode === "navigate") {
-    e.respondWith(caches.match("index.html", { cacheName: CACHE }).then((r) => r || fetch(e.request)));
+    e.respondWith(caches.match("./", { cacheName: CACHE }).then((r) => r || fetch(e.request)));
     return;
   }
   e.respondWith(
